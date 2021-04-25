@@ -8,6 +8,7 @@
 - [Why](#why)
 - [Instruments](#instruments)
 - [Usage](#usage)
+- [Code explanation](#code-explanation)
 - [Support and contributing](#support-and-contributing)
 
 ## About
@@ -87,6 +88,9 @@ Plotting library - [gonum](https://github.com/gonum/plot#gonum-plot)
 
     ![Generated data on last epoch](cmd/examples/parabola/output/gen_reference_func_final.png)
 
+
+## Code explanation
+@TODO
 
 ## Support and contributing
 If you have troubles or questions please [open an issue](https://github.com/LdDl/gan-go/issues/new).

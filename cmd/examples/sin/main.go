@@ -80,20 +80,20 @@ func main() {
 
 	/* Define variables for reading evaluation graphs' (both GAN and Discriminator in training mode) output */
 	// GAN Generator output
-	var generated_samples gorgonia.Value
-	gorgonia.Read(definedGAN.GeneratorOut(), &generated_samples)
+	var generatedSamples gorgonia.Value
+	gorgonia.Read(definedGAN.GeneratorOut(), &generatedSamples)
 
 	// GAN overall output (Discriminator output actually)
-	var output_discriminator gorgonia.Value
-	gorgonia.Read(definedGAN.Out(), &output_discriminator)
+	var outputDiscriminator gorgonia.Value
+	gorgonia.Read(definedGAN.Out(), &outputDiscriminator)
 
 	// Discriminator output in training mode
-	var output_discriminator_train gorgonia.Value
-	gorgonia.Read(discriminatorTrain.Out(), &output_discriminator_train)
+	var outputDiscriminatorTrain gorgonia.Value
+	gorgonia.Read(discriminatorTrain.Out(), &outputDiscriminatorTrain)
 
 	// Initialize machine for GAN evaluation graph
-	tmFFonly := gorgonia.NewTapeMachine(ganGraph)
-	defer tmFFonly.Close()
+	tmGenerator := gorgonia.NewTapeMachine(ganGraph)
+	defer tmGenerator.Close()
 
 	// Define loss function for GAN as
 	// loss{i} = (gan_out{i} - target{i})^2
@@ -198,25 +198,25 @@ func main() {
 			}
 
 			real_samples_labels := tensor.Ones(tensor.Float64, batchSize, 1)
-			latent_space_samples := gan.NormRandDense(batchSize, 2)
-			err = gorgonia.Let(inputGenerator, latent_space_samples)
+			latentSpaceSamples := gan.NormRandDense(batchSize, 2)
+			err = gorgonia.Let(inputGenerator, latentSpaceSamples)
 			if err != nil {
 				panic(err)
 			}
 
-			// Do step on evaluation graph for obtaining 'generated_samples' (Generator output)
-			err = tmFFonly.RunAll()
+			// Do step on evaluation graph for obtaining 'generatedSamples' (Generator output)
+			err = tmGenerator.RunAll()
 			if err != nil {
 				panic(err)
 			}
-			tmFFonly.Reset()
+			tmGenerator.Reset()
 
 			// Assume that Generator generates wrong data, and label its output as zero
 			generated_samples_labels := tensor.Ones(tensor.Float64, batchSize, 1)
 			generated_samples_labels.Zero()
 
 			// Concat real and fake input data
-			all_samples, err := tensor.Concat(0, xVal, generated_samples.(tensor.Tensor))
+			all_samples, err := tensor.Concat(0, xVal, generatedSamples.(tensor.Tensor))
 			if err != nil {
 				panic(err)
 			}
@@ -246,8 +246,8 @@ func main() {
 			}
 			tmDisTrain.Reset()
 
-			latent_space_samples_gen := gan.NormRandDense(batchSize, 2)
-			err = gorgonia.Let(inputGenerator, latent_space_samples_gen)
+			latentSpaceSamplesGenerated := gan.NormRandDense(batchSize, 2)
+			err = gorgonia.Let(inputGenerator, latentSpaceSamplesGenerated)
 			if err != nil {
 				panic(err)
 			}
@@ -273,7 +273,7 @@ func main() {
 				fmt.Printf("\tTaken time: %v\n", time.Since(st))
 				st = time.Now()
 
-				testSamplesTensor, err := gan.GenerateTestSamples(tmFFonly, tmDisTrain, inputGenerator, inputDiscriminatorTrain, generated_samples, numTestSamples, batchSize, 2)
+				testSamplesTensor, err := gan.GenerateTestSamples(tmGenerator, tmDisTrain, inputGenerator, inputDiscriminatorTrain, generatedSamples, numTestSamples, batchSize, 2)
 				if err != nil {
 					panic(err)
 				}
@@ -297,7 +297,7 @@ func main() {
 
 	// Final test of Generator
 	fmt.Println("Start testing generator after final epoch")
-	testSamplesTensor, err := gan.GenerateTestSamples(tmFFonly, tmDisTrain, inputGenerator, inputDiscriminatorTrain, generated_samples, numTestSamples, batchSize, 2)
+	testSamplesTensor, err := gan.GenerateTestSamples(tmGenerator, tmDisTrain, inputGenerator, inputDiscriminatorTrain, generatedSamples, numTestSamples, batchSize, 2)
 	if err != nil {
 		panic(err)
 	}

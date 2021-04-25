@@ -132,8 +132,8 @@ func GenerateTestSamples(vmGenerator, vmDiscriminator gorgonia.VM, inputGenerato
 	var testSamplesTensor *tensor.Dense
 
 	for i := 0; i < numSamples; i++ {
-		latent_space_samples := NormRandDense(batchSize, n)
-		err := gorgonia.Let(inputGenerator, latent_space_samples)
+		latentSpaceSamples := NormRandDense(batchSize, n)
+		err := gorgonia.Let(inputGenerator, latentSpaceSamples)
 		if err != nil {
 			return nil, errors.Wrap(err, "Can't init input value")
 		}
