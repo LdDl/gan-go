@@ -20,7 +20,7 @@ What is GAN?
 
 _Note_: *although there is code with some wrappings/aliasing and helping abstractions and functions in repository, this does not pretend to be high-level machine learning framework*
 
-_Note #2_: *By the way... Code is ugly since I've decided to handle errors instead of using panic(...) calls. Panicing is considered to be in main functions only*
+_Note #2_: *By the way... Code is ugly since I've decided to handle errors instead of using panic(...) calls. Panicing is considered to be in main functions of examples only*
 
 ## Why
 Just want to do that in Golang ecosystem.

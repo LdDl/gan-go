@@ -2,5 +2,3 @@
 .vs
 .vs_code
 cmd/examples/overall
-cmd/examples/parabola/output/gen_*.png
-cmd/examples/sin/output/gen_*.png
