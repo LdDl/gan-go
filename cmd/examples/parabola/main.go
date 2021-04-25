@@ -271,6 +271,7 @@ func main() {
 				fmt.Printf("\tDiscriminator's loss: %v\n", costValDiscriminatorTrain)
 				fmt.Printf("\tGenerator's loss: %v\n", costValGAN)
 				fmt.Printf("\tTaken time: %v\n", time.Since(st))
+				st = time.Now()
 
 				testSamplesTensor, err := gan.GenerateTestSamples(tmGenerator, tmDisTrain, inputGenerator, inputDiscriminatorTrain, generatedSamples, numTestSamples, batchSize, 2)
 				if err != nil {
