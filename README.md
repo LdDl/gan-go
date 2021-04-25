@@ -1,5 +1,5 @@
 # Generative adversarial networks
-**Recipe for simple GAN in Golang ecosystem**
+**Recipe for simple GAN in Golang ecosystem via [Gorgonia library](https://gorgonia.org/)**
 
 
 ## Table of Contents
