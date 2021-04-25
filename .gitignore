@@ -1,4 +1,3 @@
-*.png
 .vs
 .vs_code
 cmd/examples/overall
