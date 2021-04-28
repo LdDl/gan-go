@@ -57,11 +57,7 @@ func (net *Discriminator) Fwd(input *gorgonia.Node, batchSize int) error {
 	if err != nil {
 		return errors.Wrap(err, "Can't transpose weights of Discriminator's layer #0")
 	}
-	firstLayerNonActivated, err := gorgonia.Mul(input, tOp)
-	if err != nil {
-		return errors.Wrap(err, "Can't multiply input and weights of Discriminator's layer #0")
-	}
-
+	firstLayerNonActivated := &gorgonia.Node{}
 	switch net.Layers[0].Type {
 	case LayerLinear:
 		firstLayerNonActivated, err = gorgonia.Mul(input, tOp)
