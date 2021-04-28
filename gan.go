@@ -36,6 +36,7 @@ func NewGAN(g *gorgonia.ExprGraph, definedGenerator *Generator, definedDiscrimin
 	for i, l := range definedDiscriminator.Layers {
 		definedGAN.modifiedDiscriminator[i] = &Layer{
 			Activation: l.Activation,
+			Type:       l.Type,
 		}
 		if l.WeightNode == nil {
 			return nil, fmt.Errorf("Discriminator's Layer %d has nil weight node", i)
@@ -88,10 +89,19 @@ func (net *GAN) Fwd(batchSize int) error {
 	if err != nil {
 		return errors.Wrap(err, "Can't transpose weights of GAN's layer #0 [Discriminator part]")
 	}
-	firstLayerNonActivated, err := gorgonia.Mul(net.generatorPart.Out(), tOp)
-	if err != nil {
-		return errors.Wrap(err, "Can't multiply input and weights of GAN's layer #0 [Discriminator part]")
+
+	firstLayerNonActivated := &gorgonia.Node{}
+	switch net.modifiedDiscriminator[0].Type {
+	case LayerLinear:
+		firstLayerNonActivated, err = gorgonia.Mul(net.generatorPart.Out(), tOp)
+		if err != nil {
+			return errors.Wrap(err, "Can't multiply input and weights of GAN's layer #0 [Discriminator part]")
+		}
+		break
+	default:
+		return fmt.Errorf("Layer #0's type '%d' (uint16) is not handled [GAN]", net.modifiedDiscriminator[0].Type)
 	}
+
 	gorgonia.WithName("gan_discriminator_0")(firstLayerNonActivated)
 	if net.modifiedDiscriminator[0].BiasNode != nil {
 		if batchSize < 2 {
@@ -123,10 +133,19 @@ func (net *GAN) Fwd(batchSize int) error {
 		if err != nil {
 			return errors.Wrap(err, fmt.Sprintf("Can't transpose weights of GAN's layer #%d [Discriminator part]", i))
 		}
-		layerNonActivated, err := gorgonia.Mul(lastActivatedLayer, tOp)
-		if err != nil {
-			return errors.Wrap(err, fmt.Sprintf("Can't multiply input and weights of GAN's layer #%d [Discriminator part]", i))
+
+		layerNonActivated := &gorgonia.Node{}
+		switch net.modifiedDiscriminator[i].Type {
+		case LayerLinear:
+			layerNonActivated, err = gorgonia.Mul(lastActivatedLayer, tOp)
+			if err != nil {
+				return errors.Wrap(err, fmt.Sprintf("Can't multiply input and weights of GAN's layer #%d [Discriminator part]", i))
+			}
+			break
+		default:
+			return fmt.Errorf("Layer #%d's type '%d' (uint16) is not handled [GAN]", i, net.modifiedDiscriminator[i].Type)
 		}
+
 		gorgonia.WithName(fmt.Sprintf("gan_discriminator_%d", i))(layerNonActivated)
 		if net.modifiedDiscriminator[0].BiasNode != nil {
 			if batchSize < 2 {
