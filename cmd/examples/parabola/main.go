@@ -20,8 +20,12 @@ func generateY(x float64) float64 {
 }
 
 var (
-	outputFolder = "./output"
-	batchSize    = 16
+	outputFolder    = "./output"
+	batchSize       = 16
+	latentSpaceSize = 2
+	numEpoches      = 200
+	numTestSamples  = 300
+	evalPrint       = 10
 )
 
 func main() {
@@ -59,7 +63,7 @@ func main() {
 	// Define Generator on GAN's evaluation graph
 	definedGenerator := defineGenerator(ganGraph)
 	// Initialize Generator feedforward
-	inputGenerator := gorgonia.NewMatrix(ganGraph, gorgonia.Float64, gorgonia.WithShape(batchSize, 2), gorgonia.WithName("generator_input"))
+	inputGenerator := gorgonia.NewMatrix(ganGraph, gorgonia.Float64, gorgonia.WithShape(batchSize, latentSpaceSize), gorgonia.WithName("generator_input"))
 	err = definedGenerator.Fwd(inputGenerator, batchSize)
 	if err != nil {
 		panic(err)
@@ -166,10 +170,6 @@ func main() {
 	// Define number of batches as
 	// baches_num = train_data_num / batch_size
 	batches := int(trainDataLength / batchSize)
-	// Number of epoches
-	numEpoches := 200
-	// Number of test samples
-	numTestSamples := 300
 
 	// Looping process
 	st := time.Now()
@@ -198,7 +198,7 @@ func main() {
 			}
 
 			real_samples_labels := tensor.Ones(tensor.Float64, batchSize, 1)
-			latentSpaceSamples := gan.NormRandDense(batchSize, 2)
+			latentSpaceSamples := gan.NormRandDense(batchSize, latentSpaceSize)
 			err = gorgonia.Let(inputGenerator, latentSpaceSamples)
 			if err != nil {
 				panic(err)
@@ -246,7 +246,7 @@ func main() {
 			}
 			tmDisTrain.Reset()
 
-			latentSpaceSamplesGenerated := gan.NormRandDense(batchSize, 2)
+			latentSpaceSamplesGenerated := gan.NormRandDense(batchSize, latentSpaceSize)
 			err = gorgonia.Let(inputGenerator, latentSpaceSamplesGenerated)
 			if err != nil {
 				panic(err)
@@ -266,14 +266,14 @@ func main() {
 			}
 			tm.Reset()
 
-			if epoch%10 == 0 && b == batchSize-1 {
+			if epoch%evalPrint == 0 && b == batchSize-1 {
 				fmt.Printf("Epoch %d:\n", epoch)
 				fmt.Printf("\tDiscriminator's loss: %v\n", costValDiscriminatorTrain)
 				fmt.Printf("\tGenerator's loss: %v\n", costValGAN)
 				fmt.Printf("\tTaken time: %v\n", time.Since(st))
 				st = time.Now()
 
-				testSamplesTensor, err := gan.GenerateTestSamples(tmGenerator, tmDisTrain, inputGenerator, inputDiscriminatorTrain, generatedSamples, numTestSamples, batchSize, 2)
+				testSamplesTensor, err := gan.GenerateTestSamples(tmGenerator, tmDisTrain, inputGenerator, inputDiscriminatorTrain, generatedSamples, numTestSamples, batchSize, latentSpaceSize)
 				if err != nil {
 					panic(err)
 				}
@@ -297,7 +297,7 @@ func main() {
 
 	// Final test of Generator
 	fmt.Println("Start testing generator after final epoch")
-	testSamplesTensor, err := gan.GenerateTestSamples(tmGenerator, tmDisTrain, inputGenerator, inputDiscriminatorTrain, generatedSamples, numTestSamples, batchSize, 2)
+	testSamplesTensor, err := gan.GenerateTestSamples(tmGenerator, tmDisTrain, inputGenerator, inputDiscriminatorTrain, generatedSamples, numTestSamples, batchSize, latentSpaceSize)
 	if err != nil {
 		panic(err)
 	}
@@ -363,7 +363,7 @@ func defineDiscriminator(g *gorgonia.ExprGraph) *gan.Discriminator {
 }
 
 func defineGenerator(g *gorgonia.ExprGraph) *gan.Generator {
-	gen_shp0 := tensor.Shape{16, 2}
+	gen_shp0 := tensor.Shape{16, latentSpaceSize}
 	gen_b0 := gorgonia.NewMatrix(g, gorgonia.Float64, gorgonia.WithShape(1, gen_shp0[0]), gorgonia.WithName("generator_b0"), gorgonia.WithInit(gorgonia.GlorotN(1.0)))
 	gen_w0 := gorgonia.NewMatrix(g, gorgonia.Float64, gorgonia.WithShape(gen_shp0...), gorgonia.WithName("generator_w0"), gorgonia.WithInit(gorgonia.GlorotN(1.0)))
 

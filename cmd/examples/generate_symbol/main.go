@@ -11,49 +11,62 @@ import (
 	"gorgonia.org/tensor"
 )
 
-func generateX() float64 {
-	return 2 * math.Pi * rand.Float64()
-}
-
-func generateY(x float64) float64 {
-	return math.Sin(x)
-}
-
 var (
 	outputFolder    = "./output"
-	batchSize       = 16
-	latentSpaceSize = 2
-	numEpoches      = 400
-	numTestSamples  = 300
-	evalPrint       = 20
+	dataFile        = "./training_data.csv"
+	batchSize       = 1
+	latentSpaceSize = 150
+	symbolHeight    = 10
+	symbolWidth     = 8
+	numEpoches      = 210
+	numTestSamples  = 1
+	evalPrint       = 30
 )
+
+func genSyntheticData(numSamples int) *gan.TrainSet {
+	// Generate 'H' char in binary representation
+	f64data := []float64{
+		0, 0, 0, 0, 0, 0, 0, 0,
+		0, 1, 1, 0, 0, 1, 1, 0,
+		0, 1, 1, 0, 0, 1, 1, 0,
+		0, 1, 1, 0, 0, 1, 1, 0,
+		0, 1, 1, 1, 1, 1, 1, 0,
+		0, 1, 1, 1, 1, 1, 1, 0,
+		0, 1, 1, 0, 0, 1, 1, 0,
+		0, 1, 1, 0, 0, 1, 1, 0,
+		0, 1, 1, 0, 0, 1, 1, 0,
+		0, 0, 0, 0, 0, 0, 0, 0,
+	}
+	data := tensor.New(tensor.WithShape(1, symbolHeight*symbolWidth), tensor.WithBacking(f64data))
+
+	fmt.Println("Reference data:")
+	for x := 0; x < symbolHeight; x++ {
+		fmt.Printf("\t")
+		for y := 0; y < symbolWidth; y++ {
+			r := math.Round(f64data[x*symbolWidth+y])
+			if r == -0 {
+				r = 0
+			}
+			fmt.Printf("%.0f ", r)
+		}
+		fmt.Println()
+	}
+
+	labels := tensor.Ones(tensor.Float64, numSamples, 1)
+	return &gan.TrainSet{
+		TrainData:  data,
+		TrainLabel: labels,
+		DataLength: numSamples,
+	}
+}
 
 func main() {
 	// Initialize seed with constant value to reproduce results
 	rand.Seed(1337)
 
 	// Prepare synthetic data
-	trainDataLength := 1024
-	trainSet, err := gan.GenerateTrainingSet(trainDataLength, generateX, generateY)
-	if err != nil {
-		panic(err)
-	}
-
-	// Extract X and Y(X) values for charts plotting
-	slicedXAxis, err := trainSet.TrainData.Slice(nil, gorgonia.S(0))
-	if err != nil {
-		panic(err)
-	}
-	slicedYAxis, err := trainSet.TrainData.Slice(nil, gorgonia.S(1))
-	if err != nil {
-		panic(err)
-	}
-
-	// Plot reference function
-	err = gan.PlotXY(slicedXAxis.Materialize(), slicedYAxis.Materialize(), fmt.Sprintf("%s/reference_function.png", outputFolder))
-	if err != nil {
-		panic(err)
-	}
+	trainDataLength := 1
+	trainSet := genSyntheticData(trainDataLength)
 
 	// Define graph for GAN feedforward and Generator training
 	ganGraph := gorgonia.NewGraph()
@@ -64,7 +77,7 @@ func main() {
 	definedGenerator := defineGenerator(ganGraph)
 	// Initialize Generator feedforward
 	inputGenerator := gorgonia.NewMatrix(ganGraph, gorgonia.Float64, gorgonia.WithShape(batchSize, latentSpaceSize), gorgonia.WithName("generator_input"))
-	err = definedGenerator.Fwd(inputGenerator, batchSize)
+	err := definedGenerator.Fwd(inputGenerator, batchSize)
 	if err != nil {
 		panic(err)
 	}
@@ -72,7 +85,7 @@ func main() {
 	// Define Discriminator on its own evaluation graph
 	discriminatorTrain := defineDiscriminator(trainDiscriminatorGraph)
 	// Initialize Discriminator feedforward
-	inputDiscriminatorTrain := gorgonia.NewMatrix(trainDiscriminatorGraph, gorgonia.Float64, gorgonia.WithShape(2*batchSize, 2), gorgonia.WithName("discriminator_train_input"))
+	inputDiscriminatorTrain := gorgonia.NewMatrix(trainDiscriminatorGraph, gorgonia.Float64, gorgonia.WithShape(2*batchSize, symbolHeight*symbolWidth), gorgonia.WithName("discriminator_train_input"))
 	discriminatorTrain.Fwd(inputDiscriminatorTrain, 2*batchSize)
 
 	// Define GAN on the same evaluation graph as Generator has been defined
@@ -173,6 +186,7 @@ func main() {
 
 	// Looping process
 	st := time.Now()
+
 	for epoch := 0; epoch < numEpoches; epoch++ {
 		// Iterate through batches
 		for b := 0; b < batches; b++ {
@@ -187,15 +201,7 @@ func main() {
 
 			var xVal tensor.Tensor
 			/* Batch real data */
-			xVal, err = trainSet.TrainData.Slice(gan.SlicerOneStep{StartIdx: start, EndIdx: end})
-			if err != nil {
-				panic(err)
-			}
-			// Crutch for reshaping vector to matrix (keep in mind batch_size)
-			err = xVal.Reshape(batchSize, 2)
-			if err != nil {
-				panic(err)
-			}
+			xVal = trainSet.TrainData
 
 			real_samples_labels := tensor.Ones(tensor.Float64, batchSize, 1)
 			latentSpaceSamples := gan.NormRandDense(batchSize, latentSpaceSize)
@@ -218,8 +224,10 @@ func main() {
 			// Concat real and fake input data
 			all_samples, err := tensor.Concat(0, xVal, generatedSamples.(tensor.Tensor))
 			if err != nil {
+				fmt.Println(xVal.Shape(), generatedSamples.(tensor.Tensor).Shape())
 				panic(err)
 			}
+
 			// Concat real and fake output labels
 			all_samples_labels, err := tensor.Concat(0, real_samples_labels, generated_samples_labels)
 			if err != nil {
@@ -231,10 +239,12 @@ func main() {
 			if err != nil {
 				panic(err)
 			}
+
 			err = gorgonia.Let(targetDiscriminatorTrain, all_samples_labels)
 			if err != nil {
 				panic(err)
 			}
+
 			// Do training step for Discriminator in training mode
 			err = tmDisTrain.RunAll()
 			if err != nil {
@@ -255,6 +265,7 @@ func main() {
 			if err != nil {
 				panic(err)
 			}
+
 			// Do training step for Generator
 			err = tm.RunAll()
 			if err != nil {
@@ -272,24 +283,21 @@ func main() {
 				fmt.Printf("\tGenerator's loss: %v\n", costValGAN)
 				fmt.Printf("\tTaken time: %v\n", time.Since(st))
 				st = time.Now()
-
 				testSamplesTensor, err := gan.GenerateTestSamples(tmGenerator, tmDisTrain, inputGenerator, inputDiscriminatorTrain, generatedSamples, numTestSamples, batchSize, latentSpaceSize)
 				if err != nil {
 					panic(err)
 				}
-				// Extract X and Y(X) values for charts plotting
-				slicedXAxis, err := testSamplesTensor.Slice(nil, gorgonia.S(0))
-				if err != nil {
-					panic(err)
-				}
-				slicedYAxis, err := testSamplesTensor.Slice(nil, gorgonia.S(1))
-				if err != nil {
-					panic(err)
-				}
-				// Plot output of Generator of certain epoch
-				err = gan.PlotXY(slicedXAxis.Materialize(), slicedYAxis.Materialize(), fmt.Sprintf("%s/gen_reference_func_%d.png", outputFolder, epoch))
-				if err != nil {
-					panic(err)
+				testData := testSamplesTensor.Materialize().Data().([]float64)
+				for x := 0; x < symbolHeight; x++ {
+					fmt.Printf("\t")
+					for y := 0; y < symbolWidth; y++ {
+						r := math.Round(testData[x*symbolWidth+y])
+						if r == -0 {
+							r = 0
+						}
+						fmt.Printf("%.0f ", r)
+					}
+					fmt.Println()
 				}
 			}
 		}
@@ -301,24 +309,22 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	// Extract X and Y(X) values for charts plotting
-	slicedXAxis, err = testSamplesTensor.Slice(nil, gorgonia.S(0))
-	if err != nil {
-		panic(err)
-	}
-	slicedYAxis, err = testSamplesTensor.Slice(nil, gorgonia.S(1))
-	if err != nil {
-		panic(err)
-	}
-	// Plot output of Generator of certain epoch
-	err = gan.PlotXY(slicedXAxis.Materialize(), slicedYAxis.Materialize(), fmt.Sprintf("%s/gen_reference_func_final.png", outputFolder))
-	if err != nil {
-		panic(err)
+	testData := testSamplesTensor.Materialize().Data().([]float64)
+	for x := 0; x < symbolHeight; x++ {
+		fmt.Printf("\t")
+		for y := 0; y < symbolWidth; y++ {
+			r := math.Round(testData[x*symbolWidth+y])
+			if r == -0 {
+				r = 0
+			}
+			fmt.Printf("%.0f ", r)
+		}
+		fmt.Println()
 	}
 }
 
 func defineDiscriminator(g *gorgonia.ExprGraph) *gan.Discriminator {
-	dis_shp0 := tensor.Shape{256, 2}
+	dis_shp0 := tensor.Shape{256, symbolHeight * symbolWidth}
 
 	dis_b0 := gorgonia.NewMatrix(g, gorgonia.Float64, gorgonia.WithShape(1, dis_shp0[0]), gorgonia.WithName("discriminator_train_b0"), gorgonia.WithInit(gorgonia.GlorotN(1.0)))
 	dis_w0 := gorgonia.NewMatrix(g, gorgonia.Float64, gorgonia.WithShape(dis_shp0...), gorgonia.WithName("discriminator_train_w0"), gorgonia.WithInit(gorgonia.GlorotN(1.0)))
@@ -344,22 +350,22 @@ func defineDiscriminator(g *gorgonia.ExprGraph) *gan.Discriminator {
 			{
 				WeightNode: dis_w0,
 				BiasNode:   dis_b0,
-				Activation: gorgonia.Rectify,
+				Activation: gorgonia.Sigmoid,
 			},
 			{
 				WeightNode: dis_w1,
 				BiasNode:   dis_b1,
-				Activation: gorgonia.Rectify,
+				Activation: gorgonia.Sigmoid,
 			},
 			{
 				WeightNode: dis_w2,
 				BiasNode:   dis_b2,
-				Activation: gorgonia.Rectify,
+				Activation: gorgonia.Sigmoid,
 			},
 			{
 				WeightNode: dis_w3,
 				BiasNode:   dis_b3,
-				Activation: gorgonia.Rectify,
+				Activation: gorgonia.Sigmoid,
 			},
 			{
 				WeightNode: dis_w5,
@@ -384,7 +390,7 @@ func defineGenerator(g *gorgonia.ExprGraph) *gan.Generator {
 	gen_b2 := gorgonia.NewMatrix(g, gorgonia.Float64, gorgonia.WithShape(1, gen_shp2[0]), gorgonia.WithName("generator_b2"), gorgonia.WithInit(gorgonia.GlorotN(1.0)))
 	gen_w2 := gorgonia.NewMatrix(g, gorgonia.Float64, gorgonia.WithShape(gen_shp2...), gorgonia.WithName("generator_w2"), gorgonia.WithInit(gorgonia.GlorotN(1.0)))
 
-	gen_shp3 := tensor.Shape{2, 16}
+	gen_shp3 := tensor.Shape{symbolHeight * symbolWidth, 16}
 	gen_b3 := gorgonia.NewMatrix(g, gorgonia.Float64, gorgonia.WithShape(1, gen_shp3[0]), gorgonia.WithName("generator_b3"), gorgonia.WithInit(gorgonia.GlorotN(1.0)))
 	gen_w3 := gorgonia.NewMatrix(g, gorgonia.Float64, gorgonia.WithShape(gen_shp3...), gorgonia.WithName("generator_w3"), gorgonia.WithInit(gorgonia.GlorotN(1.0)))
 
@@ -393,17 +399,17 @@ func defineGenerator(g *gorgonia.ExprGraph) *gan.Generator {
 			{
 				WeightNode: gen_w0,
 				BiasNode:   gen_b0,
-				Activation: gorgonia.Rectify,
+				Activation: gorgonia.Sigmoid,
 			},
 			{
 				WeightNode: gen_w1,
 				BiasNode:   gen_b1,
-				Activation: gorgonia.Rectify,
+				Activation: gorgonia.Sigmoid,
 			},
 			{
 				WeightNode: gen_w2,
 				BiasNode:   gen_b2,
-				Activation: gan.NoActivation,
+				Activation: gorgonia.Sigmoid,
 			},
 			{
 				WeightNode: gen_w3,

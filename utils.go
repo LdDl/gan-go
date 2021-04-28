@@ -126,7 +126,7 @@ func PlotXY(x, y tensor.Tensor, fname string) error {
 // graphValue - variable with access to Generator's output
 // numSamples - how many sample generate
 // batchSize - batch size basically
-// n - number of elements in each batch
+// n - number of elements in each batch (latent space size)
 //
 func GenerateTestSamples(vmGenerator, vmDiscriminator gorgonia.VM, inputGenerator, inputDiscriminator *gorgonia.Node, generatorOutValue gorgonia.Value, numSamples, batchSize, n int) (*tensor.Dense, error) {
 	var testSamplesTensor *tensor.Dense
