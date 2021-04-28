@@ -340,21 +340,25 @@ func defineDiscriminator(g *gorgonia.ExprGraph) *gan.Discriminator {
 			{
 				WeightNode: dis_w0,
 				BiasNode:   dis_b0,
+				Type:       gan.LayerLinear,
 				Activation: gorgonia.Rectify,
 			},
 			{
 				WeightNode: dis_w1,
 				BiasNode:   dis_b1,
+				Type:       gan.LayerLinear,
 				Activation: gorgonia.Rectify,
 			},
 			{
 				WeightNode: dis_w2,
 				BiasNode:   dis_b2,
+				Type:       gan.LayerLinear,
 				Activation: gorgonia.Rectify,
 			},
 			{
 				WeightNode: dis_w3,
 				BiasNode:   dis_b3,
+				Type:       gan.LayerLinear,
 				Activation: gorgonia.Sigmoid,
 			},
 		},
@@ -380,16 +384,19 @@ func defineGenerator(g *gorgonia.ExprGraph) *gan.Generator {
 			{
 				WeightNode: gen_w0,
 				BiasNode:   gen_b0,
+				Type:       gan.LayerLinear,
 				Activation: gorgonia.Rectify,
 			},
 			{
 				WeightNode: gen_w1,
 				BiasNode:   gen_b1,
+				Type:       gan.LayerLinear,
 				Activation: gorgonia.Rectify,
 			},
 			{
 				WeightNode: gen_w2,
 				BiasNode:   gen_b2,
+				Type:       gan.LayerLinear,
 				Activation: gan.NoActivation,
 			},
 		},

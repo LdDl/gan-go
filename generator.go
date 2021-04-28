@@ -57,10 +57,18 @@ func (net *Generator) Fwd(input *gorgonia.Node, batchSize int) error {
 	if err != nil {
 		return errors.Wrap(err, "Can't transpose weights of Generator's layer #0")
 	}
-	firstLayerNonActivated, err := gorgonia.Mul(input, tOp)
-	if err != nil {
-		return errors.Wrap(err, "Can't multiply input and weights of Generator's layer #0")
+	firstLayerNonActivated := &gorgonia.Node{}
+	switch net.Layers[0].Type {
+	case LayerLinear:
+		firstLayerNonActivated, err = gorgonia.Mul(input, tOp)
+		if err != nil {
+			return errors.Wrap(err, "Can't multiply input and weights of Generator's layer #0")
+		}
+		break
+	default:
+		return fmt.Errorf("Layer #0's type '%d' (uint16) is not handled [Generator]", net.Layers[0].Type)
 	}
+
 	gorgonia.WithName("generator_0")(firstLayerNonActivated)
 	if net.Layers[0].BiasNode != nil {
 		if batchSize < 2 {
@@ -92,10 +100,19 @@ func (net *Generator) Fwd(input *gorgonia.Node, batchSize int) error {
 		if err != nil {
 			return errors.Wrap(err, fmt.Sprintf("Can't transpose weights of Generator's layer #%d", i))
 		}
-		layerNonActivated, err := gorgonia.Mul(lastActivatedLayer, tOp)
-		if err != nil {
-			return errors.Wrap(err, fmt.Sprintf("Can't multiply input and weights of Generator's layer #%d", i))
+
+		layerNonActivated := &gorgonia.Node{}
+		switch net.Layers[0].Type {
+		case LayerLinear:
+			layerNonActivated, err = gorgonia.Mul(lastActivatedLayer, tOp)
+			if err != nil {
+				return errors.Wrap(err, fmt.Sprintf("Can't multiply input and weights of Generator's layer #%d", i))
+			}
+			break
+		default:
+			return fmt.Errorf("Layer #%d's type '%d' (uint16) is not handled [Generator]", i, net.Layers[0].Type)
 		}
+
 		gorgonia.WithName(fmt.Sprintf("generator_%d", i))(layerNonActivated)
 		if net.Layers[0].BiasNode != nil {
 			if batchSize < 2 {

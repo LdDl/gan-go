@@ -9,6 +9,7 @@ type Layer struct {
 	WeightNode *gorgonia.Node
 	BiasNode   *gorgonia.Node
 	Activation ActivationFunc
+	Type       LayerType
 }
 
 // ActivationFunc Just an alias to Gorgonia'a api_gen.go - https://github.com/gorgonia/gorgonia/blob/master/api_gen.go#L1
@@ -38,3 +39,9 @@ type ActivationFunc func(a *gorgonia.Node) (*gorgonia.Node, error)
 func NoActivation(a *gorgonia.Node) (*gorgonia.Node, error) {
 	return a, nil
 }
+
+type LayerType uint16
+
+const (
+	LayerLinear = LayerType(iota)
+)

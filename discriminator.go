@@ -61,6 +61,18 @@ func (net *Discriminator) Fwd(input *gorgonia.Node, batchSize int) error {
 	if err != nil {
 		return errors.Wrap(err, "Can't multiply input and weights of Discriminator's layer #0")
 	}
+
+	switch net.Layers[0].Type {
+	case LayerLinear:
+		firstLayerNonActivated, err = gorgonia.Mul(input, tOp)
+		if err != nil {
+			return errors.Wrap(err, "Can't multiply input and weights of Discriminator's layer #0")
+		}
+		break
+	default:
+		return fmt.Errorf("Layer #0's type '%d' (uint16) is not handled [Discriminator]", net.Layers[0].Type)
+	}
+
 	gorgonia.WithName("discriminator_0")(firstLayerNonActivated)
 	if net.Layers[0].BiasNode != nil {
 		if batchSize < 2 {
@@ -92,10 +104,19 @@ func (net *Discriminator) Fwd(input *gorgonia.Node, batchSize int) error {
 		if err != nil {
 			return errors.Wrap(err, fmt.Sprintf("Can't transpose weights of Discriminator's layer #%d", i))
 		}
-		layerNonActivated, err := gorgonia.Mul(lastActivatedLayer, tOp)
-		if err != nil {
-			return errors.Wrap(err, fmt.Sprintf("Can't multiply input and weights of Discriminator's layer #%d", i))
+
+		layerNonActivated := &gorgonia.Node{}
+		switch net.Layers[0].Type {
+		case LayerLinear:
+			layerNonActivated, err = gorgonia.Mul(lastActivatedLayer, tOp)
+			if err != nil {
+				return errors.Wrap(err, fmt.Sprintf("Can't multiply input and weights of Discriminator's layer #%d", i))
+			}
+			break
+		default:
+			return fmt.Errorf("Layer #%d's type '%d' (uint16) is not handled [Discriminator]", i, net.Layers[0].Type)
 		}
+
 		gorgonia.WithName(fmt.Sprintf("discriminator_%d", i))(layerNonActivated)
 		if net.Layers[0].BiasNode != nil {
 			if batchSize < 2 {

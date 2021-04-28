@@ -22,6 +22,12 @@ _Note_: *although there is code with some wrappings/aliasing and helping abstrac
 
 _Note #2_: *By the way... Code is ugly since I've decided to handle errors instead of using panic(...) calls. Panicing is considered to be in main functions of examples only*
 
+Current examples contain limited set of layer types:
+- [x] Linear
+- [ ] Convolutional
+- [ ] Maxpool
+- [ ] AvgPool
+
 ## Why
 Just want to do that in Golang ecosystem.
 
