@@ -102,7 +102,7 @@ func (net *Generator) Fwd(input *gorgonia.Node, batchSize int) error {
 		}
 
 		layerNonActivated := &gorgonia.Node{}
-		switch net.Layers[0].Type {
+		switch net.Layers[i].Type {
 		case LayerLinear:
 			layerNonActivated, err = gorgonia.Mul(lastActivatedLayer, tOp)
 			if err != nil {
@@ -110,7 +110,7 @@ func (net *Generator) Fwd(input *gorgonia.Node, batchSize int) error {
 			}
 			break
 		default:
-			return fmt.Errorf("Layer #%d's type '%d' (uint16) is not handled [Generator]", i, net.Layers[0].Type)
+			return fmt.Errorf("Layer #%d's type '%d' (uint16) is not handled [Generator]", i, net.Layers[i].Type)
 		}
 
 		gorgonia.WithName(fmt.Sprintf("generator_%d", i))(layerNonActivated)
