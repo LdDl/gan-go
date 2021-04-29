@@ -147,7 +147,7 @@ func (net *GAN) Fwd(batchSize int) error {
 		}
 
 		gorgonia.WithName(fmt.Sprintf("gan_discriminator_%d", i))(layerNonActivated)
-		if net.modifiedDiscriminator[0].BiasNode != nil {
+		if net.modifiedDiscriminator[i].BiasNode != nil {
 			if batchSize < 2 {
 				layerNonActivated, err = gorgonia.Add(layerNonActivated, net.modifiedDiscriminator[i].BiasNode)
 				if err != nil {

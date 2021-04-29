@@ -114,7 +114,7 @@ func (net *Generator) Fwd(input *gorgonia.Node, batchSize int) error {
 		}
 
 		gorgonia.WithName(fmt.Sprintf("generator_%d", i))(layerNonActivated)
-		if net.Layers[0].BiasNode != nil {
+		if net.Layers[i].BiasNode != nil {
 			if batchSize < 2 {
 				layerNonActivated, err = gorgonia.Add(layerNonActivated, net.Layers[i].BiasNode)
 				if err != nil {
