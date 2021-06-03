@@ -44,4 +44,7 @@ type LayerType uint16
 
 const (
 	LayerLinear = LayerType(iota)
+	LayerFlatten
+	LayerConvolutional
+	LayerMaxpool
 )
