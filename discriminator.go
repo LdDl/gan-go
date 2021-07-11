@@ -107,7 +107,6 @@ func (net *Discriminator) Fwd(input *gorgonia.Node, batchSize int) error {
 		}
 	}
 	firstLayerActivated, err := net.Layers[0].Activation(firstLayerNonActivated)
-	// firstLayerActivated := firstLayerNonActivated
 	if err != nil {
 		return errors.Wrap(err, "Can't apply activation function to non-activated output of Discriminator's layer #0")
 	}
