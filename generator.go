@@ -94,6 +94,12 @@ func (net *Generator) Fwd(input *gorgonia.Node, batchSize int) error {
 			return errors.Wrap(err, "Can't flatten input of Generator's layer #0")
 		}
 		break
+	case LayerReshape:
+		firstLayerNonActivated, err = gorgonia.Reshape(input, net.Layers[0].ReshapeDims)
+		if err != nil {
+			return errors.Wrap(err, "Can't reshape input of Generator's layer #0")
+		}
+		break
 	default:
 		return fmt.Errorf("Layer #0's type '%d' (uint16) is not handled [Generator]", net.Layers[0].Type)
 	}
@@ -166,6 +172,12 @@ func (net *Generator) Fwd(input *gorgonia.Node, batchSize int) error {
 				return errors.Wrap(err, fmt.Sprintf("Can't flatten input of Generator's layer #%d", i))
 			}
 			break
+		case LayerReshape:
+			layerNonActivated, err = gorgonia.Reshape(lastActivatedLayer, net.Layers[i].ReshapeDims)
+			if err != nil {
+				return errors.Wrap(err, fmt.Sprintf("Can't reshape input of Generator's layer #%d", i))
+			}
+			break
 		default:
 			return fmt.Errorf("Layer #%d's type '%d' (uint16) is not handled [Generator]", i, net.Layers[i].Type)
 		}
@@ -193,6 +205,8 @@ func (net *Generator) Fwd(input *gorgonia.Node, batchSize int) error {
 		if i == len(net.Layers)-1 {
 			net.out = layerActivated
 		}
+
+		fmt.Println(layerNonActivated.Shape())
 	}
 	return nil
 }

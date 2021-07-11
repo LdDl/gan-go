@@ -137,6 +137,12 @@ func (net *GAN) Fwd(batchSize int) error {
 			return errors.Wrap(err, "Can't flatten input of GAN's layer #0 [Discriminator part]")
 		}
 		break
+	case LayerReshape:
+		firstLayerNonActivated, err = gorgonia.Reshape(net.generatorPart.Out(), net.modifiedDiscriminator[0].ReshapeDims)
+		if err != nil {
+			return errors.Wrap(err, "Can't reshape input of GAN's layer #0 [Discriminator part]")
+		}
+		break
 	default:
 		return fmt.Errorf("Layer #0's type '%d' (uint16) is not handled [GAN]", net.modifiedDiscriminator[0].Type)
 	}
@@ -179,11 +185,13 @@ func (net *GAN) Fwd(batchSize int) error {
 				return errors.Wrap(err, fmt.Sprintf("Can't transpose weights of GAN's layer #%d [Discriminator part]", i))
 			}
 			if batchSize < 2 {
+				fmt.Println("mem", lastActivatedLayer.Shape(), tOp.Shape())
 				layerNonActivated, err = gorgonia.Mul(lastActivatedLayer, tOp)
 				if err != nil {
 					return errors.Wrap(err, fmt.Sprintf("Can't multiply input and weights of GAN's layer #%d [Discriminator part]", i))
 				}
 			} else {
+				fmt.Println("mem2")
 				layerNonActivated, err = gorgonia.BatchedMatMul(lastActivatedLayer, tOp)
 				if err != nil {
 					return errors.Wrap(err, fmt.Sprintf("Can't multiply input and weights of GAN's layer #%d [Discriminator part]", i))
@@ -206,6 +214,12 @@ func (net *GAN) Fwd(batchSize int) error {
 			layerNonActivated, err = gorgonia.Reshape(lastActivatedLayer, tensor.Shape{batchSize, lastActivatedLayer.Shape().TotalSize() / batchSize})
 			if err != nil {
 				return errors.Wrap(err, fmt.Sprintf("Can't flatten input of GAN's layer #%d [Discriminator part]", i))
+			}
+			break
+		case LayerReshape:
+			layerNonActivated, err = gorgonia.Reshape(lastActivatedLayer, net.modifiedDiscriminator[i].ReshapeDims)
+			if err != nil {
+				return errors.Wrap(err, fmt.Sprintf("Can't reshape input of GAN's layer #%d [Discriminator part]", i))
 			}
 			break
 		default:

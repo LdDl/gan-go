@@ -95,6 +95,12 @@ func (net *Discriminator) Fwd(input *gorgonia.Node, batchSize int) error {
 			return errors.Wrap(err, "Can't flatten input of Discriminator's layer #0")
 		}
 		break
+	case LayerReshape:
+		firstLayerNonActivated, err = gorgonia.Reshape(input, net.Layers[0].ReshapeDims)
+		if err != nil {
+			return errors.Wrap(err, "Can't reshape input of Discriminator's layer #0")
+		}
+		break
 	default:
 		return fmt.Errorf("Layer #0's type '%d' (uint16) is not handled [Discriminator]", net.Layers[0].Type)
 	}
@@ -123,7 +129,7 @@ func (net *Discriminator) Fwd(input *gorgonia.Node, batchSize int) error {
 	if len(net.Layers) == 1 {
 		net.out = lastActivatedLayer
 	}
-
+	fmt.Println(lastActivatedLayer.Shape(), "kek")
 	for i := 1; i < len(net.Layers); i++ {
 		if net.Layers[i] == nil {
 			return fmt.Errorf("Discriminator's layer #%d is nil", i)
@@ -169,6 +175,12 @@ func (net *Discriminator) Fwd(input *gorgonia.Node, batchSize int) error {
 				return errors.Wrap(err, fmt.Sprintf("Can't flatten input of Discriminator's layer #%d", i))
 			}
 			break
+		case LayerReshape:
+			layerNonActivated, err = gorgonia.Reshape(lastActivatedLayer, net.Layers[i].ReshapeDims)
+			if err != nil {
+				return errors.Wrap(err, fmt.Sprintf("Can't reshape input of Discriminator's layer #%d", i))
+			}
+			break
 		default:
 			return fmt.Errorf("Layer #%d's type '%d' (uint16) is not handled [Discriminator]", i, net.Layers[i].Type)
 		}
@@ -196,6 +208,7 @@ func (net *Discriminator) Fwd(input *gorgonia.Node, batchSize int) error {
 		if i == len(net.Layers)-1 {
 			net.out = layerActivated
 		}
+		fmt.Println(layerNonActivated.Shape(), "kek")
 	}
 	return nil
 }

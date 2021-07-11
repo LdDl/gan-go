@@ -117,7 +117,7 @@ func PlotXY(x, y tensor.Tensor, fname string) error {
 	return nil
 }
 
-// GenerateTestSamples Generates test samples for provided arguments
+// GenerateNormTestSamples Generates test samples for provided arguments for [Normal distribution]
 //
 // vmGenerator - tape machine used for GAN
 // vmDiscriminator - tape machined used for Discriminator only
@@ -128,11 +128,69 @@ func PlotXY(x, y tensor.Tensor, fname string) error {
 // batchSize - batch size basically
 // n - number of elements in each batch (latent space size)
 //
-func GenerateTestSamples(vmGenerator, vmDiscriminator gorgonia.VM, inputGenerator, inputDiscriminator *gorgonia.Node, generatorOutValue gorgonia.Value, numSamples, batchSize, n int, shape tensor.Shape) (*tensor.Dense, error) {
+func GenerateNormTestSamples(vmGenerator, vmDiscriminator gorgonia.VM, inputGenerator, inputDiscriminator *gorgonia.Node, generatorOutValue gorgonia.Value, numSamples, batchSize, n int, shape tensor.Shape) (*tensor.Dense, error) {
 	var testSamplesTensor *tensor.Dense
 
 	for i := 0; i < numSamples; i++ {
 		latentSpaceSamples := NormRandDense(batchSize, n)
+		if len(shape) > 0 {
+			err := latentSpaceSamples.Reshape(shape...)
+			if err != nil {
+				return nil, errors.Wrap(err, "Can't reshape latent spaces")
+			}
+		}
+		err := gorgonia.Let(inputGenerator, latentSpaceSamples)
+		if err != nil {
+			return nil, errors.Wrap(err, "Can't init input value")
+		}
+		err = vmGenerator.RunAll()
+		if err != nil {
+			return nil, errors.Wrap(err, "Can't run VM")
+		}
+		vmGenerator.Reset()
+		tensorV := generatorOutValue.(*tensor.Dense)
+		tensorVConcat, err := tensor.Concat(0, tensorV, tensorV)
+		if err != nil {
+			return nil, errors.Wrap(err, "Can't do concatenation")
+		}
+		err = gorgonia.Let(inputDiscriminator, tensorVConcat)
+		if err != nil {
+			panic(err)
+		}
+		err = vmDiscriminator.RunAll()
+		if err != nil {
+			panic(err)
+		}
+		vmDiscriminator.Reset()
+		if i == 0 {
+			testSamplesTensor = tensorV
+		} else {
+			newT, err := testSamplesTensor.Vstack(tensorV)
+			if err != nil {
+				panic(err)
+			}
+			testSamplesTensor = newT
+		}
+	}
+	return testSamplesTensor, nil
+}
+
+// GenerateUniformTestSamples Generates test samples for provided arguments [Uniform distribution]
+//
+// vmGenerator - tape machine used for GAN
+// vmDiscriminator - tape machined used for Discriminator only
+// inputGenerator - node for holding value of Generator's input
+// inputDiscriminator - node for holding value of Discriminator's input
+// graphValue - variable with access to Generator's output
+// numSamples - how many sample generate
+// batchSize - batch size basically
+// n - number of elements in each batch (latent space size)
+//
+func GenerateUniformTestSamples(vmGenerator, vmDiscriminator gorgonia.VM, inputGenerator, inputDiscriminator *gorgonia.Node, generatorOutValue gorgonia.Value, numSamples, batchSize, n int, shape tensor.Shape) (*tensor.Dense, error) {
+	var testSamplesTensor *tensor.Dense
+
+	for i := 0; i < numSamples; i++ {
+		latentSpaceSamples := UniformRandDense(batchSize, n)
 		if len(shape) > 0 {
 			err := latentSpaceSamples.Reshape(shape...)
 			if err != nil {

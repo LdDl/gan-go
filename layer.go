@@ -16,6 +16,7 @@ type Layer struct {
 	Padding      []int
 	Stride       []int
 	Dilation     []int
+	ReshapeDims  []int
 }
 
 // ActivationFunc Just an alias to Gorgonia'a api_gen.go - https://github.com/gorgonia/gorgonia/blob/master/api_gen.go#L1
@@ -53,10 +54,11 @@ const (
 	LayerFlatten
 	LayerConvolutional
 	LayerMaxpool
+	LayerReshape
 )
 
 var (
-	allowedNoWeights = []LayerType{LayerMaxpool, LayerFlatten}
+	allowedNoWeights = []LayerType{LayerMaxpool, LayerFlatten, LayerReshape}
 )
 
 func noWeightsAllowed(checkType LayerType) bool {
