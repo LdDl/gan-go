@@ -128,11 +128,17 @@ func PlotXY(x, y tensor.Tensor, fname string) error {
 // batchSize - batch size basically
 // n - number of elements in each batch (latent space size)
 //
-func GenerateTestSamples(vmGenerator, vmDiscriminator gorgonia.VM, inputGenerator, inputDiscriminator *gorgonia.Node, generatorOutValue gorgonia.Value, numSamples, batchSize, n int) (*tensor.Dense, error) {
+func GenerateTestSamples(vmGenerator, vmDiscriminator gorgonia.VM, inputGenerator, inputDiscriminator *gorgonia.Node, generatorOutValue gorgonia.Value, numSamples, batchSize, n int, shape tensor.Shape) (*tensor.Dense, error) {
 	var testSamplesTensor *tensor.Dense
 
 	for i := 0; i < numSamples; i++ {
 		latentSpaceSamples := NormRandDense(batchSize, n)
+		if len(shape) > 0 {
+			err := latentSpaceSamples.Reshape(shape...)
+			if err != nil {
+				return nil, errors.Wrap(err, "Can't reshape latent spaces")
+			}
+		}
 		err := gorgonia.Let(inputGenerator, latentSpaceSamples)
 		if err != nil {
 			return nil, errors.Wrap(err, "Can't init input value")
@@ -167,4 +173,30 @@ func GenerateTestSamples(vmGenerator, vmDiscriminator gorgonia.VM, inputGenerato
 		}
 	}
 	return testSamplesTensor, nil
+}
+
+// MSELoss See ref. https://en.wikipedia.org/wiki/Mean_squared_error
+// Loss{i} = (gan_out{i} - target{i})^2 / n
+func MSELoss(a, b *gorgonia.Node, batchSize int) (*gorgonia.Node, error) {
+	// fmt.Println(a.Shape(), b.Shape(), batchSize)
+	if batchSize < 2 {
+		sub, err := gorgonia.Sub(a, b)
+		if err != nil {
+			return nil, err
+		}
+		sqr, err := gorgonia.Square(sub)
+		if err != nil {
+			return nil, err
+		}
+		return gorgonia.Mean(sqr)
+	}
+	sub, err := gorgonia.BroadcastSub(a, b, []byte{0}, nil)
+	if err != nil {
+		return nil, err
+	}
+	sqr, err := gorgonia.Square(sub)
+	if err != nil {
+		return nil, err
+	}
+	return gorgonia.Mean(sqr)
 }

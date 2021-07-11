@@ -113,8 +113,8 @@ func main() {
 	gorgonia.Read(cost, &costOut)
 
 	/* Define tape machine */
-	tmGenerator := gorgonia.NewTapeMachine(cnnGraph, gorgonia.BindDualValues(simpleCNN.Learnables()...))
-	defer tmGenerator.Close()
+	tm := gorgonia.NewTapeMachine(cnnGraph, gorgonia.BindDualValues(simpleCNN.Learnables()...))
+	defer tm.Close()
 
 	/* Initialize solver for evaluation graph */
 	solver := gorgonia.NewRMSPropSolver(gorgonia.WithBatchSize(float64(batchSize)), gorgonia.WithLearnRate(learning_rate))
@@ -137,7 +137,7 @@ func main() {
 			}
 
 			/* Run training step */
-			err = tmGenerator.RunAll()
+			err = tm.RunAll()
 			if err != nil {
 				panic(err)
 			}
@@ -145,7 +145,7 @@ func main() {
 			if err != nil {
 				panic(err)
 			}
-			tmGenerator.Reset()
+			tm.Reset()
 
 			/* Train neural network to recognize char 'T' */
 			// Prepare input
@@ -160,7 +160,7 @@ func main() {
 			}
 
 			/* Run training step */
-			err = tmGenerator.RunAll()
+			err = tm.RunAll()
 			if err != nil {
 				panic(err)
 			}
@@ -168,7 +168,7 @@ func main() {
 			if err != nil {
 				panic(err)
 			}
-			tmGenerator.Reset()
+			tm.Reset()
 
 			/* Train neural network to recognize char 'O' */
 			// Prepare input
@@ -183,7 +183,7 @@ func main() {
 			}
 
 			/* Run training step */
-			err = tmGenerator.RunAll()
+			err = tm.RunAll()
 			if err != nil {
 				panic(err)
 			}
@@ -191,7 +191,7 @@ func main() {
 			if err != nil {
 				panic(err)
 			}
-			tmGenerator.Reset()
+			tm.Reset()
 		}
 	}
 
@@ -202,11 +202,11 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	err = tmGenerator.RunAll()
+	err = tm.RunAll()
 	if err != nil {
 		panic(err)
 	}
-	tmGenerator.Reset()
+	tm.Reset()
 	fmt.Println("X => Should give [1, 0, 0]", cnnOut)
 
 	/* 'X' char [with noise] */
@@ -218,11 +218,11 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	err = tmGenerator.RunAll()
+	err = tm.RunAll()
 	if err != nil {
 		panic(err)
 	}
-	tmGenerator.Reset()
+	tm.Reset()
 	fmt.Println("\tnoisy X => Should give [1, 0, 0]", cnnOut)
 
 	/* 'T' char */
@@ -230,11 +230,11 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	err = tmGenerator.RunAll()
+	err = tm.RunAll()
 	if err != nil {
 		panic(err)
 	}
-	tmGenerator.Reset()
+	tm.Reset()
 	fmt.Println("T => Should give [0, 1, 0]", cnnOut)
 
 	/* 'T' char [with noise] */
@@ -246,11 +246,11 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	err = tmGenerator.RunAll()
+	err = tm.RunAll()
 	if err != nil {
 		panic(err)
 	}
-	tmGenerator.Reset()
+	tm.Reset()
 	fmt.Println("\tnoisy T => Should give [0, 1, 0]", cnnOut)
 
 	/* 'O' char */
@@ -258,11 +258,11 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	err = tmGenerator.RunAll()
+	err = tm.RunAll()
 	if err != nil {
 		panic(err)
 	}
-	tmGenerator.Reset()
+	tm.Reset()
 	fmt.Println("O => Should give [0, 0, 1]", cnnOut)
 
 	/* 'O' char [with noise] */
@@ -274,11 +274,11 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	err = tmGenerator.RunAll()
+	err = tm.RunAll()
 	if err != nil {
 		panic(err)
 	}
-	tmGenerator.Reset()
+	tm.Reset()
 	fmt.Println("\tnoisy O => Should give [0, 0, 1]", cnnOut)
 }
 

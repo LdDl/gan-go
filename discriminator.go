@@ -65,9 +65,16 @@ func (net *Discriminator) Fwd(input *gorgonia.Node, batchSize int) error {
 		if err != nil {
 			return errors.Wrap(err, "Can't transpose weights of Discriminator's layer #0")
 		}
-		firstLayerNonActivated, err = gorgonia.Mul(input, tOp)
-		if err != nil {
-			return errors.Wrap(err, "Can't multiply input and weights of Discriminator's layer #0")
+		if batchSize < 2 {
+			firstLayerNonActivated, err = gorgonia.Mul(input, tOp)
+			if err != nil {
+				return errors.Wrap(err, "Can't multiply input and weights of Discriminator's layer #0")
+			}
+		} else {
+			firstLayerNonActivated, err = gorgonia.BatchedMatMul(input, tOp)
+			if err != nil {
+				return errors.Wrap(err, "Can't multiply input and weights of Discriminator's layer #0")
+			}
 		}
 		break
 	case LayerConvolutional:
@@ -83,7 +90,7 @@ func (net *Discriminator) Fwd(input *gorgonia.Node, batchSize int) error {
 		}
 		break
 	case LayerFlatten:
-		firstLayerNonActivated, err = gorgonia.Reshape(input, tensor.Shape{1, input.Shape().TotalSize()})
+		firstLayerNonActivated, err = gorgonia.Reshape(input, tensor.Shape{batchSize, input.Shape().TotalSize() / batchSize})
 		if err != nil {
 			return errors.Wrap(err, "Can't flatten input of Discriminator's layer #0")
 		}
@@ -132,9 +139,16 @@ func (net *Discriminator) Fwd(input *gorgonia.Node, batchSize int) error {
 			if err != nil {
 				return errors.Wrap(err, fmt.Sprintf("Can't transpose weights of Discriminator's layer #%d", i))
 			}
-			layerNonActivated, err = gorgonia.Mul(lastActivatedLayer, tOp)
-			if err != nil {
-				return errors.Wrap(err, fmt.Sprintf("Can't multiply input and weights of Discriminator's layer #%d", i))
+			if batchSize < 2 {
+				layerNonActivated, err = gorgonia.Mul(lastActivatedLayer, tOp)
+				if err != nil {
+					return errors.Wrap(err, fmt.Sprintf("Can't multiply input and weights of Discriminator's layer #%d", i))
+				}
+			} else {
+				layerNonActivated, err = gorgonia.BatchedMatMul(lastActivatedLayer, tOp)
+				if err != nil {
+					return errors.Wrap(err, fmt.Sprintf("Can't multiply input and weights of Discriminator's layer #%d", i))
+				}
 			}
 			break
 		case LayerConvolutional:
@@ -150,7 +164,7 @@ func (net *Discriminator) Fwd(input *gorgonia.Node, batchSize int) error {
 			}
 			break
 		case LayerFlatten:
-			layerNonActivated, err = gorgonia.Reshape(lastActivatedLayer, tensor.Shape{1, lastActivatedLayer.Shape().TotalSize()})
+			layerNonActivated, err = gorgonia.Reshape(lastActivatedLayer, tensor.Shape{batchSize, lastActivatedLayer.Shape().TotalSize() / batchSize})
 			if err != nil {
 				return errors.Wrap(err, fmt.Sprintf("Can't flatten input of Discriminator's layer #%d", i))
 			}
