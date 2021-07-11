@@ -10,6 +10,12 @@ type Layer struct {
 	BiasNode   *gorgonia.Node
 	Activation ActivationFunc
 	Type       LayerType
+
+	KernelHeight int
+	KernelWidth  int
+	Padding      []int
+	Stride       []int
+	Dilation     []int
 }
 
 // ActivationFunc Just an alias to Gorgonia'a api_gen.go - https://github.com/gorgonia/gorgonia/blob/master/api_gen.go#L1
@@ -48,3 +54,20 @@ const (
 	LayerConvolutional
 	LayerMaxpool
 )
+
+var (
+	allowedNoWeights = []LayerType{LayerMaxpool, LayerFlatten}
+)
+
+func noWeightsAllowed(checkType LayerType) bool {
+	return checkLayerType(checkType, allowedNoWeights...)
+}
+
+func checkLayerType(checkType LayerType, t ...LayerType) bool {
+	for _, typeOf := range t {
+		if checkType == typeOf {
+			return true
+		}
+	}
+	return false
+}

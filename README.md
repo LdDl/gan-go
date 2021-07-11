@@ -27,6 +27,7 @@ Current examples contain limited set of layer types:
 - [ ] Convolutional
 - [ ] Maxpool
 - [ ] AvgPool
+- [ ] Flatten
 
 ## Why
 Just want to do that in Golang ecosystem.
