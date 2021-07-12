@@ -296,7 +296,7 @@ func defineCNN(g *gorgonia.ExprGraph) *gan.Discriminator {
 				WeightNode:   dis_w0,
 				BiasNode:     nil,
 				Type:         gan.LayerConvolutional,
-				Activation:   gorgonia.Rectify,
+				Activation:   gan.Rectify,
 				KernelHeight: 3,
 				KernelWidth:  3,
 				Padding:      []int{0, 0},
@@ -319,7 +319,7 @@ func defineCNN(g *gorgonia.ExprGraph) *gan.Discriminator {
 				WeightNode: dis_w1,
 				BiasNode:   nil,
 				Type:       gan.LayerLinear,
-				Activation: gorgonia.Sigmoid,
+				Activation: gan.Sigmoid,
 			},
 		},
 	}
