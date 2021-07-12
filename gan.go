@@ -16,7 +16,7 @@ import (
 //
 type GAN struct {
 	generatorPart     *Generator
-	discriminatorPart *Discriminator
+	discriminatorPart *DiscriminatorNet
 
 	modifiedDiscriminator []*Layer
 
@@ -25,16 +25,16 @@ type GAN struct {
 	learnablesGen gorgonia.Nodes
 }
 
-func NewGAN(g *gorgonia.ExprGraph, definedGenerator *Generator, definedDiscriminator *Discriminator) (*GAN, error) {
+func NewGAN(g *gorgonia.ExprGraph, definedGenerator *Generator, definedDiscriminator *DiscriminatorNet) (*GAN, error) {
 	definedGAN := GAN{
 		generatorPart:         definedGenerator,
 		discriminatorPart:     definedDiscriminator,
-		modifiedDiscriminator: make([]*Layer, len(definedDiscriminator.Layers)),
+		modifiedDiscriminator: make([]*Layer, len(definedDiscriminator.private.Layers)),
 		learnablesGen:         definedGenerator.Learnables(),
 		learnables:            append(definedGenerator.Learnables()),
 	}
 	// Discriminator part for GAN
-	for i, l := range definedDiscriminator.Layers {
+	for i, l := range definedDiscriminator.private.Layers {
 		definedGAN.modifiedDiscriminator[i] = &Layer{
 			Activation:   l.Activation,
 			Type:         l.Type,
