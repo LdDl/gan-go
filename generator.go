@@ -206,7 +206,6 @@ func (net *Generator) Fwd(input *gorgonia.Node, batchSize int) error {
 			net.out = layerActivated
 		}
 
-		fmt.Println(layerNonActivated.Shape())
 	}
 	return nil
 }
