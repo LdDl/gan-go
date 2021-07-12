@@ -317,7 +317,7 @@ func main() {
 	}
 }
 
-func defineDiscriminator(g *gorgonia.ExprGraph) *gan.Discriminator {
+func defineDiscriminator(g *gorgonia.ExprGraph) *gan.DiscriminatorNet {
 	dis_shp0 := tensor.Shape{256, 2}
 
 	dis_b0 := gorgonia.NewMatrix(g, gorgonia.Float64, gorgonia.WithShape(1, dis_shp0[0]), gorgonia.WithName("discriminator_train_b0"), gorgonia.WithInit(gorgonia.GlorotN(1.0)))
@@ -335,38 +335,38 @@ func defineDiscriminator(g *gorgonia.ExprGraph) *gan.Discriminator {
 	dis_b3 := gorgonia.NewMatrix(g, gorgonia.Float64, gorgonia.WithShape(1, dis_shp3[0]), gorgonia.WithName("discriminator_train_b3"), gorgonia.WithInit(gorgonia.GlorotN(1.0)))
 	dis_w3 := gorgonia.NewMatrix(g, gorgonia.Float64, gorgonia.WithShape(dis_shp3...), gorgonia.WithName("discriminator_train_w3"), gorgonia.WithInit(gorgonia.GlorotN(1.0)))
 
-	discriminator := gan.Discriminator{
-		Layers: []*gan.Layer{
+	discriminator := gan.Discriminator(
+		[]*gan.Layer{
 			{
 				WeightNode: dis_w0,
 				BiasNode:   dis_b0,
 				Type:       gan.LayerLinear,
-				Activation: gorgonia.Rectify,
+				Activation: gan.Rectify,
 			},
 			{
 				WeightNode: dis_w1,
 				BiasNode:   dis_b1,
 				Type:       gan.LayerLinear,
-				Activation: gorgonia.Rectify,
+				Activation: gan.Rectify,
 			},
 			{
 				WeightNode: dis_w2,
 				BiasNode:   dis_b2,
 				Type:       gan.LayerLinear,
-				Activation: gorgonia.Rectify,
+				Activation: gan.Rectify,
 			},
 			{
 				WeightNode: dis_w3,
 				BiasNode:   dis_b3,
 				Type:       gan.LayerLinear,
-				Activation: gorgonia.Sigmoid,
+				Activation: gan.Sigmoid,
 			},
-		},
-	}
-	return &discriminator
+		}...,
+	)
+	return discriminator
 }
 
-func defineGenerator(g *gorgonia.ExprGraph) *gan.Generator {
+func defineGenerator(g *gorgonia.ExprGraph) *gan.GeneratorNet {
 	gen_shp0 := tensor.Shape{16, latentSpaceSize}
 	gen_b0 := gorgonia.NewMatrix(g, gorgonia.Float64, gorgonia.WithShape(1, gen_shp0[0]), gorgonia.WithName("generator_b0"), gorgonia.WithInit(gorgonia.GlorotN(1.0)))
 	gen_w0 := gorgonia.NewMatrix(g, gorgonia.Float64, gorgonia.WithShape(gen_shp0...), gorgonia.WithName("generator_w0"), gorgonia.WithInit(gorgonia.GlorotN(1.0)))
@@ -379,19 +379,19 @@ func defineGenerator(g *gorgonia.ExprGraph) *gan.Generator {
 	gen_b2 := gorgonia.NewMatrix(g, gorgonia.Float64, gorgonia.WithShape(1, gen_shp2[0]), gorgonia.WithName("generator_b2"), gorgonia.WithInit(gorgonia.GlorotN(1.0)))
 	gen_w2 := gorgonia.NewMatrix(g, gorgonia.Float64, gorgonia.WithShape(gen_shp2...), gorgonia.WithName("generator_w2"), gorgonia.WithInit(gorgonia.GlorotN(1.0)))
 
-	generator := gan.Generator{
-		Layers: []*gan.Layer{
+	generator := gan.Generator(
+		[]*gan.Layer{
 			{
 				WeightNode: gen_w0,
 				BiasNode:   gen_b0,
 				Type:       gan.LayerLinear,
-				Activation: gorgonia.Rectify,
+				Activation: gan.Rectify,
 			},
 			{
 				WeightNode: gen_w1,
 				BiasNode:   gen_b1,
 				Type:       gan.LayerLinear,
-				Activation: gorgonia.Rectify,
+				Activation: gan.Rectify,
 			},
 			{
 				WeightNode: gen_w2,
@@ -399,8 +399,8 @@ func defineGenerator(g *gorgonia.ExprGraph) *gan.Generator {
 				Type:       gan.LayerLinear,
 				Activation: gan.NoActivation,
 			},
-		},
-	}
+		}...,
+	)
 
-	return &generator
+	return generator
 }

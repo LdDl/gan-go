@@ -282,7 +282,7 @@ func main() {
 	fmt.Println("\tnoisy O => Should give [0, 0, 1]", cnnOut)
 }
 
-func defineCNN(g *gorgonia.ExprGraph) *gan.Discriminator {
+func defineCNN(g *gorgonia.ExprGraph) *gan.DiscriminatorNet {
 	/*
 		input(9,8) => filters=5,size=3x3,conv(7,6) => filters=5,size=2x2,maxpool(3,3) => 5*flatten(9) => linear(3, 45)
 	*/
@@ -290,13 +290,13 @@ func defineCNN(g *gorgonia.ExprGraph) *gan.Discriminator {
 	dis_w0 := gorgonia.NewTensor(g, gorgonia.Float64, 4, gorgonia.WithShape(dis_shp0...), gorgonia.WithName("discriminator_train_w0"), gorgonia.WithInit(gorgonia.GlorotN(1.0)))
 	dis_shp1 := tensor.Shape{3, 45}
 	dis_w1 := gorgonia.NewMatrix(g, gorgonia.Float64, gorgonia.WithShape(dis_shp1...), gorgonia.WithName("discriminator_train_w1"), gorgonia.WithInit(gorgonia.GlorotN(1.0)))
-	discriminator := gan.Discriminator{
-		Layers: []*gan.Layer{
+	discriminator := gan.Discriminator(
+		[]*gan.Layer{
 			{
 				WeightNode:   dis_w0,
 				BiasNode:     nil,
 				Type:         gan.LayerConvolutional,
-				Activation:   gorgonia.Rectify,
+				Activation:   gan.Rectify,
 				KernelHeight: 3,
 				KernelWidth:  3,
 				Padding:      []int{0, 0},
@@ -319,11 +319,11 @@ func defineCNN(g *gorgonia.ExprGraph) *gan.Discriminator {
 				WeightNode: dis_w1,
 				BiasNode:   nil,
 				Type:       gan.LayerLinear,
-				Activation: gorgonia.Sigmoid,
+				Activation: gan.Sigmoid,
 			},
-		},
-	}
-	return &discriminator
+		}...,
+	)
+	return discriminator
 }
 
 func addNoiseToNoZeroValues(t *tensor.Dense) (*tensor.Dense, error) {
