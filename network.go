@@ -129,7 +129,6 @@ func (net *Network) Fwd(input *gorgonia.Node, batchSize int) error {
 	if len(net.Layers) == 1 {
 		net.out = lastActivatedLayer
 	}
-	fmt.Println(lastActivatedLayer.Shape(), "kek")
 	for i := 1; i < len(net.Layers); i++ {
 		if net.Layers[i] == nil {
 			return fmt.Errorf("Network's layer #%d is nil", i)
@@ -208,7 +207,6 @@ func (net *Network) Fwd(input *gorgonia.Node, batchSize int) error {
 		if i == len(net.Layers)-1 {
 			net.out = layerActivated
 		}
-		fmt.Println(layerNonActivated.Shape(), "kek")
 	}
 	return nil
 }
