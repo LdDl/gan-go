@@ -185,13 +185,11 @@ func (net *GAN) Fwd(batchSize int) error {
 				return errors.Wrap(err, fmt.Sprintf("Can't transpose weights of GAN's layer #%d [Discriminator part]", i))
 			}
 			if batchSize < 2 {
-				fmt.Println("mem", lastActivatedLayer.Shape(), tOp.Shape())
 				layerNonActivated, err = gorgonia.Mul(lastActivatedLayer, tOp)
 				if err != nil {
 					return errors.Wrap(err, fmt.Sprintf("Can't multiply input and weights of GAN's layer #%d [Discriminator part]", i))
 				}
 			} else {
-				fmt.Println("mem2")
 				layerNonActivated, err = gorgonia.BatchedMatMul(lastActivatedLayer, tOp)
 				if err != nil {
 					return errors.Wrap(err, fmt.Sprintf("Can't multiply input and weights of GAN's layer #%d [Discriminator part]", i))

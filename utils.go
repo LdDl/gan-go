@@ -236,7 +236,6 @@ func GenerateUniformTestSamples(vmGenerator, vmDiscriminator gorgonia.VM, inputG
 // MSELoss See ref. https://en.wikipedia.org/wiki/Mean_squared_error
 // Loss{i} = (gan_out{i} - target{i})^2 / n
 func MSELoss(a, b *gorgonia.Node, batchSize int) (*gorgonia.Node, error) {
-	// fmt.Println(a.Shape(), b.Shape(), batchSize)
 	if batchSize < 2 {
 		sub, err := gorgonia.Sub(a, b)
 		if err != nil {
