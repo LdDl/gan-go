@@ -18,7 +18,7 @@ type GAN struct {
 	generatorPart     *GeneratorNet
 	discriminatorPart *DiscriminatorNet
 
-	modifiedDiscriminator []*Layer
+	modifiedDiscriminator *DiscriminatorNet
 
 	out           *gorgonia.Node
 	learnables    gorgonia.Nodes
@@ -27,15 +27,19 @@ type GAN struct {
 
 func NewGAN(g *gorgonia.ExprGraph, definedGenerator *GeneratorNet, definedDiscriminator *DiscriminatorNet) (*GAN, error) {
 	definedGAN := GAN{
-		generatorPart:         definedGenerator,
-		discriminatorPart:     definedDiscriminator,
-		modifiedDiscriminator: make([]*Layer, len(definedDiscriminator.private.Layers)),
-		learnablesGen:         definedGenerator.Learnables(),
-		learnables:            append(definedGenerator.Learnables()),
+		generatorPart:     definedGenerator,
+		discriminatorPart: definedDiscriminator,
+		// modifiedDiscriminator: make([]*Layer, len(definedDiscriminator.private.Layers)),
+		modifiedDiscriminator: &DiscriminatorNet{private: &Network{
+			Name:   "gan_discriminator",
+			Layers: make([]*Layer, len(definedDiscriminator.private.Layers)),
+		}},
+		learnablesGen: definedGenerator.Learnables(),
+		learnables:    append(definedGenerator.Learnables()),
 	}
 	// Discriminator part for GAN
 	for i, l := range definedDiscriminator.private.Layers {
-		definedGAN.modifiedDiscriminator[i] = &Layer{
+		definedGAN.modifiedDiscriminator.private.Layers[i] = &Layer{
 			Activation:   l.Activation,
 			Type:         l.Type,
 			KernelHeight: l.KernelHeight,
@@ -49,14 +53,12 @@ func NewGAN(g *gorgonia.ExprGraph, definedGenerator *GeneratorNet, definedDiscri
 			return nil, fmt.Errorf("Discriminator's Layer %d has nil weight node", i)
 		}
 		if l.WeightNode != nil {
-			// definedGAN.modifiedDiscriminator[i].WeightNode = gorgonia.NewMatrix(g, gorgonia.Float64, gorgonia.WithShape(l.WeightNode.Shape()...), gorgonia.WithName(l.WeightNode.Name()+"_gan"), gorgonia.WithValue(l.WeightNode.Value()))
-			definedGAN.modifiedDiscriminator[i].WeightNode = gorgonia.NewTensor(g, gorgonia.Float64, l.WeightNode.Dims(), gorgonia.WithShape(l.WeightNode.Shape()...), gorgonia.WithName(l.WeightNode.Name()+"_gan"), gorgonia.WithValue(l.WeightNode.Value()))
-			definedGAN.learnables = append(definedGAN.learnables, definedGAN.modifiedDiscriminator[i].WeightNode)
+			definedGAN.modifiedDiscriminator.private.Layers[i].WeightNode = gorgonia.NewTensor(g, gorgonia.Float64, l.WeightNode.Dims(), gorgonia.WithShape(l.WeightNode.Shape()...), gorgonia.WithName(l.WeightNode.Name()+"_gan"), gorgonia.WithValue(l.WeightNode.Value()))
+			definedGAN.learnables = append(definedGAN.learnables, definedGAN.modifiedDiscriminator.private.Layers[i].WeightNode)
 		}
 		if l.BiasNode != nil {
-			// definedGAN.modifiedDiscriminator[i].BiasNode = gorgonia.NewMatrix(g, gorgonia.Float64, gorgonia.WithShape(l.BiasNode.Shape()...), gorgonia.WithName(l.BiasNode.Name()+"_gan"), gorgonia.WithValue(l.BiasNode.Value()))
-			definedGAN.modifiedDiscriminator[i].BiasNode = gorgonia.NewTensor(g, gorgonia.Float64, l.BiasNode.Dims(), gorgonia.WithShape(l.BiasNode.Shape()...), gorgonia.WithName(l.BiasNode.Name()+"_gan"), gorgonia.WithValue(l.BiasNode.Value()))
-			definedGAN.learnables = append(definedGAN.learnables, definedGAN.modifiedDiscriminator[i].BiasNode)
+			definedGAN.modifiedDiscriminator.private.Layers[i].BiasNode = gorgonia.NewTensor(g, gorgonia.Float64, l.BiasNode.Dims(), gorgonia.WithShape(l.BiasNode.Shape()...), gorgonia.WithName(l.BiasNode.Name()+"_gan"), gorgonia.WithValue(l.BiasNode.Value()))
+			definedGAN.learnables = append(definedGAN.learnables, definedGAN.modifiedDiscriminator.private.Layers[i].BiasNode)
 		}
 
 	}
@@ -91,20 +93,20 @@ func (net *GAN) GeneratorLearnables() gorgonia.Nodes {
 func (net *GAN) Fwd(batchSize int) error {
 	var err error
 
-	if len(net.modifiedDiscriminator) == 0 {
+	if len(net.modifiedDiscriminator.private.Layers) == 0 {
 		return fmt.Errorf("GAN must have one layer in Discriminator part atleast")
 	}
-	if net.modifiedDiscriminator[0] == nil {
+	if net.modifiedDiscriminator.private.Layers[0] == nil {
 		return fmt.Errorf("GAN layer #0 [Discriminator part] is nil")
 	}
-	if net.modifiedDiscriminator[0].WeightNode == nil && !noWeightsAllowed(net.modifiedDiscriminator[0].Type) {
+	if net.modifiedDiscriminator.private.Layers[0].WeightNode == nil && !noWeightsAllowed(net.modifiedDiscriminator.private.Layers[0].Type) {
 		return fmt.Errorf("GAN layer #0 WeightNode [Discriminator part] is nil")
 	}
 
 	firstLayerNonActivated := &gorgonia.Node{}
-	switch net.modifiedDiscriminator[0].Type {
+	switch net.modifiedDiscriminator.private.Layers[0].Type {
 	case LayerLinear:
-		tOp, err := gorgonia.Transpose(net.modifiedDiscriminator[0].WeightNode)
+		tOp, err := gorgonia.Transpose(net.modifiedDiscriminator.private.Layers[0].WeightNode)
 		if err != nil {
 			return errors.Wrap(err, "Can't transpose weights of GAN's layer #0 [Discriminator part]")
 		}
@@ -121,13 +123,13 @@ func (net *GAN) Fwd(batchSize int) error {
 		}
 		break
 	case LayerConvolutional:
-		firstLayerNonActivated, err = gorgonia.Conv2d(net.generatorPart.Out(), net.modifiedDiscriminator[0].WeightNode, tensor.Shape{net.modifiedDiscriminator[0].KernelHeight, net.modifiedDiscriminator[0].KernelWidth}, net.modifiedDiscriminator[0].Padding, net.modifiedDiscriminator[0].Stride, net.modifiedDiscriminator[0].Dilation)
+		firstLayerNonActivated, err = gorgonia.Conv2d(net.generatorPart.Out(), net.modifiedDiscriminator.private.Layers[0].WeightNode, tensor.Shape{net.modifiedDiscriminator.private.Layers[0].KernelHeight, net.modifiedDiscriminator.private.Layers[0].KernelWidth}, net.modifiedDiscriminator.private.Layers[0].Padding, net.modifiedDiscriminator.private.Layers[0].Stride, net.modifiedDiscriminator.private.Layers[0].Dilation)
 		if err != nil {
 			return errors.Wrap(err, "Can't convolve[2D] input by kernel of GAN's layer #0 [Discriminator part]")
 		}
 		break
 	case LayerMaxpool:
-		firstLayerNonActivated, err = gorgonia.MaxPool2D(net.generatorPart.Out(), tensor.Shape{net.modifiedDiscriminator[0].KernelHeight, net.modifiedDiscriminator[0].KernelWidth}, net.modifiedDiscriminator[0].Padding, net.modifiedDiscriminator[0].Stride)
+		firstLayerNonActivated, err = gorgonia.MaxPool2D(net.generatorPart.Out(), tensor.Shape{net.modifiedDiscriminator.private.Layers[0].KernelHeight, net.modifiedDiscriminator.private.Layers[0].KernelWidth}, net.modifiedDiscriminator.private.Layers[0].Padding, net.modifiedDiscriminator.private.Layers[0].Stride)
 		if err != nil {
 			return errors.Wrap(err, "Can't maxpool[2D] input by kernel of GAN's layer #0 [Discriminator part]")
 		}
@@ -139,49 +141,49 @@ func (net *GAN) Fwd(batchSize int) error {
 		}
 		break
 	case LayerReshape:
-		firstLayerNonActivated, err = gorgonia.Reshape(net.generatorPart.Out(), net.modifiedDiscriminator[0].ReshapeDims)
+		firstLayerNonActivated, err = gorgonia.Reshape(net.generatorPart.Out(), net.modifiedDiscriminator.private.Layers[0].ReshapeDims)
 		if err != nil {
 			return errors.Wrap(err, "Can't reshape input of GAN's layer #0 [Discriminator part]")
 		}
 		break
 	default:
-		return fmt.Errorf("Layer #0's type '%d' (uint16) is not handled [GAN]", net.modifiedDiscriminator[0].Type)
+		return fmt.Errorf("Layer #0's type '%d' (uint16) is not handled [GAN]", net.modifiedDiscriminator.private.Layers[0].Type)
 	}
 
 	gorgonia.WithName("gan_discriminator_0")(firstLayerNonActivated)
-	if net.modifiedDiscriminator[0].BiasNode != nil {
+	if net.modifiedDiscriminator.private.Layers[0].BiasNode != nil {
 		if batchSize < 2 {
-			firstLayerNonActivated, err = gorgonia.Add(firstLayerNonActivated, net.modifiedDiscriminator[0].BiasNode)
+			firstLayerNonActivated, err = gorgonia.Add(firstLayerNonActivated, net.modifiedDiscriminator.private.Layers[0].BiasNode)
 			if err != nil {
 				return errors.Wrap(err, "Can't add bias to non-activated output of GAN's layer #0 [Discriminator part]")
 			}
 		} else {
-			firstLayerNonActivated, err = gorgonia.BroadcastAdd(firstLayerNonActivated, net.modifiedDiscriminator[0].BiasNode, nil, []byte{0})
+			firstLayerNonActivated, err = gorgonia.BroadcastAdd(firstLayerNonActivated, net.modifiedDiscriminator.private.Layers[0].BiasNode, nil, []byte{0})
 			if err != nil {
 				return errors.Wrap(err, fmt.Sprintf("Can't add [in broadcast term with batch_size = %d] bias to non-activated output of GAN's layer #0 [Discriminator part]", batchSize))
 			}
 		}
 	}
-	firstLayerActivated, err := net.modifiedDiscriminator[0].Activation(firstLayerNonActivated)
+	firstLayerActivated, err := net.modifiedDiscriminator.private.Layers[0].Activation(firstLayerNonActivated)
 	if err != nil {
 		return errors.Wrap(err, "Can't apply activation function to non-activated output of GAN's layer #0 [Discriminator part]")
 	}
 	gorgonia.WithName("gan_discriminator_activated_0")(firstLayerActivated)
 	lastActivatedLayer := firstLayerActivated
-	if len(net.modifiedDiscriminator) == 1 {
+	if len(net.modifiedDiscriminator.private.Layers) == 1 {
 		net.out = lastActivatedLayer
 	}
-	for i := 1; i < len(net.modifiedDiscriminator); i++ {
-		if net.modifiedDiscriminator[i] == nil {
+	for i := 1; i < len(net.modifiedDiscriminator.private.Layers); i++ {
+		if net.modifiedDiscriminator.private.Layers[i] == nil {
 			return fmt.Errorf("GAN layer #%d [Discriminator part] is nil", i)
 		}
-		if net.modifiedDiscriminator[i].WeightNode == nil && !noWeightsAllowed(net.modifiedDiscriminator[i].Type) {
+		if net.modifiedDiscriminator.private.Layers[i].WeightNode == nil && !noWeightsAllowed(net.modifiedDiscriminator.private.Layers[i].Type) {
 			return fmt.Errorf("GAN layer's #%d WeightNode [Discriminator part] is nil", i)
 		}
 		layerNonActivated := &gorgonia.Node{}
-		switch net.modifiedDiscriminator[i].Type {
+		switch net.modifiedDiscriminator.private.Layers[i].Type {
 		case LayerLinear:
-			tOp, err := gorgonia.Transpose(net.modifiedDiscriminator[i].WeightNode)
+			tOp, err := gorgonia.Transpose(net.modifiedDiscriminator.private.Layers[i].WeightNode)
 			if err != nil {
 				return errors.Wrap(err, fmt.Sprintf("Can't transpose weights of GAN's layer #%d [Discriminator part]", i))
 			}
@@ -198,13 +200,13 @@ func (net *GAN) Fwd(batchSize int) error {
 			}
 			break
 		case LayerConvolutional:
-			layerNonActivated, err = gorgonia.Conv2d(lastActivatedLayer, net.modifiedDiscriminator[i].WeightNode, tensor.Shape{net.modifiedDiscriminator[i].KernelHeight, net.modifiedDiscriminator[i].KernelWidth}, net.modifiedDiscriminator[i].Padding, net.modifiedDiscriminator[i].Stride, net.modifiedDiscriminator[i].Dilation)
+			layerNonActivated, err = gorgonia.Conv2d(lastActivatedLayer, net.modifiedDiscriminator.private.Layers[i].WeightNode, tensor.Shape{net.modifiedDiscriminator.private.Layers[i].KernelHeight, net.modifiedDiscriminator.private.Layers[i].KernelWidth}, net.modifiedDiscriminator.private.Layers[i].Padding, net.modifiedDiscriminator.private.Layers[i].Stride, net.modifiedDiscriminator.private.Layers[i].Dilation)
 			if err != nil {
 				return errors.Wrap(err, fmt.Sprintf("Can't convolve[2D] input by kernel of GAN's layer #%d [Discriminator part]", i))
 			}
 			break
 		case LayerMaxpool:
-			layerNonActivated, err = gorgonia.MaxPool2D(lastActivatedLayer, tensor.Shape{net.modifiedDiscriminator[i].KernelHeight, net.modifiedDiscriminator[i].KernelWidth}, net.modifiedDiscriminator[i].Padding, net.modifiedDiscriminator[i].Stride)
+			layerNonActivated, err = gorgonia.MaxPool2D(lastActivatedLayer, tensor.Shape{net.modifiedDiscriminator.private.Layers[i].KernelHeight, net.modifiedDiscriminator.private.Layers[i].KernelWidth}, net.modifiedDiscriminator.private.Layers[i].Padding, net.modifiedDiscriminator.private.Layers[i].Stride)
 			if err != nil {
 				return errors.Wrap(err, fmt.Sprintf("Can't maxpool[2D] input by kernel of GAN's layer #%d [Discriminator part]", i))
 			}
@@ -216,36 +218,36 @@ func (net *GAN) Fwd(batchSize int) error {
 			}
 			break
 		case LayerReshape:
-			layerNonActivated, err = gorgonia.Reshape(lastActivatedLayer, net.modifiedDiscriminator[i].ReshapeDims)
+			layerNonActivated, err = gorgonia.Reshape(lastActivatedLayer, net.modifiedDiscriminator.private.Layers[i].ReshapeDims)
 			if err != nil {
 				return errors.Wrap(err, fmt.Sprintf("Can't reshape input of GAN's layer #%d [Discriminator part]", i))
 			}
 			break
 		default:
-			return fmt.Errorf("Layer #%d's type '%d' (uint16) is not handled [GAN]", i, net.modifiedDiscriminator[i].Type)
+			return fmt.Errorf("Layer #%d's type '%d' (uint16) is not handled [GAN]", i, net.modifiedDiscriminator.private.Layers[i].Type)
 		}
 
 		gorgonia.WithName(fmt.Sprintf("gan_discriminator_%d", i))(layerNonActivated)
-		if net.modifiedDiscriminator[i].BiasNode != nil {
+		if net.modifiedDiscriminator.private.Layers[i].BiasNode != nil {
 			if batchSize < 2 {
-				layerNonActivated, err = gorgonia.Add(layerNonActivated, net.modifiedDiscriminator[i].BiasNode)
+				layerNonActivated, err = gorgonia.Add(layerNonActivated, net.modifiedDiscriminator.private.Layers[i].BiasNode)
 				if err != nil {
 					return errors.Wrap(err, fmt.Sprintf("Can't add bias to non-activated output of GAN's layer #%d [Discriminator part]", i))
 				}
 			} else {
-				layerNonActivated, err = gorgonia.BroadcastAdd(layerNonActivated, net.modifiedDiscriminator[i].BiasNode, nil, []byte{0})
+				layerNonActivated, err = gorgonia.BroadcastAdd(layerNonActivated, net.modifiedDiscriminator.private.Layers[i].BiasNode, nil, []byte{0})
 				if err != nil {
 					return errors.Wrap(err, fmt.Sprintf("Can't add bias [in broadcast term with batch_size = %d] to non-activated output of GAN's layer #%d [Discriminator part]", batchSize, i))
 				}
 			}
 		}
-		layerActivated, err := net.modifiedDiscriminator[i].Activation(layerNonActivated)
+		layerActivated, err := net.modifiedDiscriminator.private.Layers[i].Activation(layerNonActivated)
 		if err != nil {
 			return errors.Wrap(err, fmt.Sprintf("Can't apply activation function to non-activated output of GAN's layer #%d [Discriminator part]", i))
 		}
 		gorgonia.WithName(fmt.Sprintf("gan_discriminator_%d", i))(layerActivated)
 		lastActivatedLayer = layerActivated
-		if i == len(net.modifiedDiscriminator)-1 {
+		if i == len(net.modifiedDiscriminator.private.Layers)-1 {
 			net.out = layerActivated
 		}
 	}
