@@ -17,6 +17,7 @@ type GeneratorNet struct {
 // Generator Constructor for GeneratorNet
 func Generator(Layers ...*Layer) *GeneratorNet {
 	return &GeneratorNet{private: &Network{
+		Name:   "generator",
 		Layers: Layers,
 	}}
 }

@@ -17,6 +17,7 @@ type DiscriminatorNet struct {
 // Discriminator Constructor for DiscriminatorNet
 func Discriminator(Layers ...*Layer) *DiscriminatorNet {
 	return &DiscriminatorNet{private: &Network{
+		Name:   "discriminator",
 		Layers: Layers,
 	}}
 }

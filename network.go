@@ -14,6 +14,7 @@ import (
 // out - alias to activated output of last layer
 //
 type Network struct {
+	Name   string
 	Layers []*Layer
 	out    *gorgonia.Node
 }
@@ -46,6 +47,11 @@ func (net *Network) Learnables() gorgonia.Nodes {
 //
 func (net *Network) Fwd(input *gorgonia.Node, batchSize int) error {
 	var err error
+
+	networkName := "network"
+	if net.Name != "" {
+		networkName = net.Name
+	}
 
 	if len(net.Layers) == 0 {
 		return fmt.Errorf("Network must have one layer atleast")
@@ -105,7 +111,7 @@ func (net *Network) Fwd(input *gorgonia.Node, batchSize int) error {
 		return fmt.Errorf("Layer #0's type '%d' (uint16) is not handled [Network]", net.Layers[0].Type)
 	}
 
-	gorgonia.WithName("network_0")(firstLayerNonActivated)
+	gorgonia.WithName(fmt.Sprintf("%s_0", networkName))(firstLayerNonActivated)
 	if net.Layers[0].BiasNode != nil {
 		if batchSize < 2 {
 			firstLayerNonActivated, err = gorgonia.Add(firstLayerNonActivated, net.Layers[0].BiasNode)
@@ -123,7 +129,7 @@ func (net *Network) Fwd(input *gorgonia.Node, batchSize int) error {
 	if err != nil {
 		return errors.Wrap(err, "Can't apply activation function to non-activated output of Network's layer #0")
 	}
-	gorgonia.WithName("network_activated_0")(firstLayerActivated)
+	gorgonia.WithName(fmt.Sprintf("%s_activated_0", networkName))(firstLayerActivated)
 	lastActivatedLayer := firstLayerActivated
 
 	if len(net.Layers) == 1 {
@@ -184,7 +190,7 @@ func (net *Network) Fwd(input *gorgonia.Node, batchSize int) error {
 			return fmt.Errorf("Layer #%d's type '%d' (uint16) is not handled [Network]", i, net.Layers[i].Type)
 		}
 
-		gorgonia.WithName(fmt.Sprintf("network_%d", i))(layerNonActivated)
+		gorgonia.WithName(fmt.Sprintf("%s_%d", networkName, i))(layerNonActivated)
 		if net.Layers[i].BiasNode != nil {
 			if batchSize < 2 {
 				layerNonActivated, err = gorgonia.Add(layerNonActivated, net.Layers[i].BiasNode)
@@ -202,7 +208,7 @@ func (net *Network) Fwd(input *gorgonia.Node, batchSize int) error {
 		if err != nil {
 			return errors.Wrap(err, fmt.Sprintf("Can't apply activation function to non-activated output of Network's layer #%d", i))
 		}
-		gorgonia.WithName(fmt.Sprintf("network_activated_%d", i))(layerActivated)
+		gorgonia.WithName(fmt.Sprintf("%s_activated_%d", networkName, i))(layerActivated)
 		lastActivatedLayer = layerActivated
 		if i == len(net.Layers)-1 {
 			net.out = layerActivated
