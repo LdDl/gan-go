@@ -12,7 +12,7 @@ import (
 //
 // generatorPart - reference to Generator
 // discriminatorPart - reference to Discriminator
-// modifiedDiscriminator - copy of structure of Discriminator which learnables would be ingored during the training process
+// modifiedDiscriminator - copy of structure of Discriminator which learnables would be ignored during the training process
 //
 type GAN struct {
 	generatorPart     *GeneratorNet
