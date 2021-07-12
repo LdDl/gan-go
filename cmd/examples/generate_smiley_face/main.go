@@ -407,7 +407,7 @@ func defineDiscriminator(g *gorgonia.ExprGraph) *gan.DiscriminatorNet {
 	return discriminator
 }
 
-func defineGenerator(g *gorgonia.ExprGraph) *gan.Generator {
+func defineGenerator(g *gorgonia.ExprGraph) *gan.GeneratorNet {
 
 	/*
 		input(250,250) => filters=12,size=3x3,conv(248,248) => filters=12,size=2x2,maxpool(124,124)
@@ -435,8 +435,8 @@ func defineGenerator(g *gorgonia.ExprGraph) *gan.Generator {
 	gen_shp5 := tensor.Shape{imgHeight * imgWidth, 25}
 	gen_w5 := gorgonia.NewMatrix(g, gorgonia.Float64, gorgonia.WithShape(gen_shp5...), gorgonia.WithName("generator_w6"), gorgonia.WithInit(gorgonia.GlorotN(1.0)))
 
-	generator := gan.Generator{
-		Layers: []*gan.Layer{
+	generator := gan.Generator(
+		[]*gan.Layer{
 			{
 				WeightNode:   gen_w0,
 				BiasNode:     nil,
@@ -534,7 +534,7 @@ func defineGenerator(g *gorgonia.ExprGraph) *gan.Generator {
 				Activation:  gan.NoActivation,
 				ReshapeDims: []int{1, 1, imgHeight, imgWidth},
 			},
-		},
-	}
-	return &generator
+		}...,
+	)
+	return generator
 }
