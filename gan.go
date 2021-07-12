@@ -15,7 +15,7 @@ import (
 // modifiedDiscriminator - copy of structure of Discriminator which learnables would be ingored during the training process
 //
 type GAN struct {
-	generatorPart     *Generator
+	generatorPart     *GeneratorNet
 	discriminatorPart *DiscriminatorNet
 
 	modifiedDiscriminator []*Layer
@@ -25,7 +25,7 @@ type GAN struct {
 	learnablesGen gorgonia.Nodes
 }
 
-func NewGAN(g *gorgonia.ExprGraph, definedGenerator *Generator, definedDiscriminator *DiscriminatorNet) (*GAN, error) {
+func NewGAN(g *gorgonia.ExprGraph, definedGenerator *GeneratorNet, definedDiscriminator *DiscriminatorNet) (*GAN, error) {
 	definedGAN := GAN{
 		generatorPart:         definedGenerator,
 		discriminatorPart:     definedDiscriminator,
@@ -69,7 +69,7 @@ func (net *GAN) Out() *gorgonia.Node {
 
 // GeneratorOut Returns reference to output node of generator part
 func (net *GAN) GeneratorOut() *gorgonia.Node {
-	return net.generatorPart.out
+	return net.generatorPart.Out()
 }
 
 // Learnables Returns learnables nodes
