@@ -43,6 +43,7 @@ func NewGAN(g *gorgonia.ExprGraph, definedGenerator *GeneratorNet, definedDiscri
 			Padding:      l.Padding,
 			Stride:       l.Stride,
 			Dilation:     l.Dilation,
+			ReshapeDims:  l.ReshapeDims,
 		}
 		if l.WeightNode == nil && !noWeightsAllowed(l.Type) {
 			return nil, fmt.Errorf("Discriminator's Layer %d has nil weight node", i)
