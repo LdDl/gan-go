@@ -204,7 +204,7 @@ func main() {
 			xVal = trainSet.TrainData
 
 			real_samples_labels := tensor.Ones(tensor.Float64, batchSize, 1)
-			latentSpaceSamples := gan.NormRandDense(batchSize, latentSpaceSize)
+			latentSpaceSamples := gan.UniformRandDense(batchSize, latentSpaceSize)
 			err = gorgonia.Let(inputGenerator, latentSpaceSamples)
 			if err != nil {
 				panic(err)
@@ -256,7 +256,7 @@ func main() {
 			}
 			tmDisTrain.Reset()
 
-			latentSpaceSamplesGenerated := gan.NormRandDense(batchSize, latentSpaceSize)
+			latentSpaceSamplesGenerated := gan.UniformRandDense(batchSize, latentSpaceSize)
 			err = gorgonia.Let(inputGenerator, latentSpaceSamplesGenerated)
 			if err != nil {
 				panic(err)
@@ -283,7 +283,7 @@ func main() {
 				fmt.Printf("\tGenerator's loss: %v\n", costValGAN)
 				fmt.Printf("\tTaken time: %v\n", time.Since(st))
 				st = time.Now()
-				testSamplesTensor, err := gan.GenerateNormTestSamples(tmGenerator, tmDisTrain, inputGenerator, inputDiscriminatorTrain, generatedSamples, numTestSamples, batchSize, latentSpaceSize, nil)
+				testSamplesTensor, err := gan.GenerateUniformTestSamples(tmGenerator, tmDisTrain, inputGenerator, inputDiscriminatorTrain, generatedSamples, numTestSamples, batchSize, latentSpaceSize, nil)
 				if err != nil {
 					panic(err)
 				}
@@ -305,7 +305,7 @@ func main() {
 
 	// Final test of Generator
 	fmt.Println("Start testing generator after final epoch")
-	testSamplesTensor, err := gan.GenerateNormTestSamples(tmGenerator, tmDisTrain, inputGenerator, inputDiscriminatorTrain, generatedSamples, numTestSamples, batchSize, latentSpaceSize, nil)
+	testSamplesTensor, err := gan.GenerateUniformTestSamples(tmGenerator, tmDisTrain, inputGenerator, inputDiscriminatorTrain, generatedSamples, numTestSamples, batchSize, latentSpaceSize, nil)
 	if err != nil {
 		panic(err)
 	}
@@ -423,7 +423,7 @@ func defineGenerator(g *gorgonia.ExprGraph) *gan.GeneratorNet {
 				WeightNode: gen_w3,
 				BiasNode:   gen_b3,
 				Type:       gan.LayerLinear,
-				Activation: gan.NoActivation,
+				Activation: gan.Sigmoid,
 			},
 		}...,
 	)
