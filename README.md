@@ -8,6 +8,7 @@
 - [Why](#why)
 - [Instruments](#instruments)
 - [Usage](#usage)
+- [ToDo](#todo)
 - [Code explanation](#code-explanation)
 - [Support and contributing](#support-and-contributing)
 
@@ -22,11 +23,13 @@ _Note_: *although there is code with some wrappings/aliasing and helping abstrac
 
 _Note #2_: *By the way... Code is ugly since I've decided to handle errors instead of using panic(...) calls. Panicing is considered to be in main functions of examples only*
 
-Current examples contain limited set of layer types:
+Current examples folder contains limited set of layer types:
 - [x] Linear
-- [ ] Convolutional
-- [ ] Maxpool
+- [x] Convolutional
+- [x] Maxpool
 - [ ] AvgPool
+- [x] Flatten
+- [x] Reshape
 
 ## Why
 Just want to do that in Golang ecosystem.
@@ -94,6 +97,13 @@ Plotting library - [gonum](https://github.com/gonum/plot#gonum-plot)
 
     ![Generated data on last epoch](cmd/examples/parabola/output/gen_reference_func_final.png)
 
+
+## ToDo
+Current stage of TODO list:
+- [ ] Reduce duplicating of code for *.Fwd()* method of each neural network type (GAN/Discriminator/Generator)
+- [ ] Switch **Layer** from *struct* to *interface*
+- [x] Add basic layers: Linear, Convolutional, Maxpool, Flatten
+- [~] Deal with batch process
 
 ## Code explanation
 @TODO

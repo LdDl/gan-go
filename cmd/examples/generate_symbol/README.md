@@ -16,6 +16,8 @@ In binary representation it looks like:
 0 0 0 0 0 0 0 0
 ```
 
+*Note: 1 epoch = 1 training step in this example* 
+
 Generated data on 0-th epoch:
 
 ```

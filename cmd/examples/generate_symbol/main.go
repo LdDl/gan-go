@@ -283,7 +283,7 @@ func main() {
 				fmt.Printf("\tGenerator's loss: %v\n", costValGAN)
 				fmt.Printf("\tTaken time: %v\n", time.Since(st))
 				st = time.Now()
-				testSamplesTensor, err := gan.GenerateTestSamples(tmGenerator, tmDisTrain, inputGenerator, inputDiscriminatorTrain, generatedSamples, numTestSamples, batchSize, latentSpaceSize)
+				testSamplesTensor, err := gan.GenerateNormTestSamples(tmGenerator, tmDisTrain, inputGenerator, inputDiscriminatorTrain, generatedSamples, numTestSamples, batchSize, latentSpaceSize, nil)
 				if err != nil {
 					panic(err)
 				}
@@ -305,7 +305,7 @@ func main() {
 
 	// Final test of Generator
 	fmt.Println("Start testing generator after final epoch")
-	testSamplesTensor, err := gan.GenerateTestSamples(tmGenerator, tmDisTrain, inputGenerator, inputDiscriminatorTrain, generatedSamples, numTestSamples, batchSize, latentSpaceSize)
+	testSamplesTensor, err := gan.GenerateNormTestSamples(tmGenerator, tmDisTrain, inputGenerator, inputDiscriminatorTrain, generatedSamples, numTestSamples, batchSize, latentSpaceSize, nil)
 	if err != nil {
 		panic(err)
 	}

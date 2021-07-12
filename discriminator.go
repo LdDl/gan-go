@@ -5,6 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 	"gorgonia.org/gorgonia"
+	"gorgonia.org/tensor"
 )
 
 // Generator Abstraction for discriminator part of GAN. It's simple neural network actually.
@@ -44,25 +45,60 @@ func (net *Discriminator) Learnables() gorgonia.Nodes {
 // batchSize - batch size. If it's >= 2 then broadcast function will be applied
 //
 func (net *Discriminator) Fwd(input *gorgonia.Node, batchSize int) error {
+	var err error
+
 	if len(net.Layers) == 0 {
 		return fmt.Errorf("Discriminator must have one layer atleast")
 	}
 	if net.Layers[0] == nil {
 		return fmt.Errorf("Discriminator's layer #0 is nil")
 	}
-	if net.Layers[0].WeightNode == nil {
+	if net.Layers[0].WeightNode == nil && !noWeightsAllowed(net.Layers[0].Type) {
 		return fmt.Errorf("Discriminator's layer #0 WeightNode is nil")
 	}
-	tOp, err := gorgonia.Transpose(net.Layers[0].WeightNode)
-	if err != nil {
-		return errors.Wrap(err, "Can't transpose weights of Discriminator's layer #0")
-	}
+
 	firstLayerNonActivated := &gorgonia.Node{}
+
 	switch net.Layers[0].Type {
 	case LayerLinear:
-		firstLayerNonActivated, err = gorgonia.Mul(input, tOp)
+		tOp, err := gorgonia.Transpose(net.Layers[0].WeightNode)
 		if err != nil {
-			return errors.Wrap(err, "Can't multiply input and weights of Discriminator's layer #0")
+			return errors.Wrap(err, "Can't transpose weights of Discriminator's layer #0")
+		}
+		if batchSize < 2 {
+			firstLayerNonActivated, err = gorgonia.Mul(input, tOp)
+			if err != nil {
+				return errors.Wrap(err, "Can't multiply input and weights of Discriminator's layer #0")
+			}
+		} else {
+			firstLayerNonActivated, err = gorgonia.BatchedMatMul(input, tOp)
+			if err != nil {
+				return errors.Wrap(err, "Can't multiply input and weights of Discriminator's layer #0")
+			}
+		}
+		break
+	case LayerConvolutional:
+		firstLayerNonActivated, err = gorgonia.Conv2d(input, net.Layers[0].WeightNode, tensor.Shape{net.Layers[0].KernelHeight, net.Layers[0].KernelWidth}, net.Layers[0].Padding, net.Layers[0].Stride, net.Layers[0].Dilation)
+		if err != nil {
+			return errors.Wrap(err, "Can't convolve[2D] input by kernel of Discriminator's layer #0")
+		}
+		break
+	case LayerMaxpool:
+		firstLayerNonActivated, err = gorgonia.MaxPool2D(input, tensor.Shape{net.Layers[0].KernelHeight, net.Layers[0].KernelWidth}, net.Layers[0].Padding, net.Layers[0].Stride)
+		if err != nil {
+			return errors.Wrap(err, "Can't maxpool[2D] input by kernel of Discriminator's layer #0")
+		}
+		break
+	case LayerFlatten:
+		firstLayerNonActivated, err = gorgonia.Reshape(input, tensor.Shape{batchSize, input.Shape().TotalSize() / batchSize})
+		if err != nil {
+			return errors.Wrap(err, "Can't flatten input of Discriminator's layer #0")
+		}
+		break
+	case LayerReshape:
+		firstLayerNonActivated, err = gorgonia.Reshape(input, net.Layers[0].ReshapeDims)
+		if err != nil {
+			return errors.Wrap(err, "Can't reshape input of Discriminator's layer #0")
 		}
 		break
 	default:
@@ -89,24 +125,60 @@ func (net *Discriminator) Fwd(input *gorgonia.Node, batchSize int) error {
 	}
 	gorgonia.WithName("discriminator_activated_0")(firstLayerActivated)
 	lastActivatedLayer := firstLayerActivated
+
+	if len(net.Layers) == 1 {
+		net.out = lastActivatedLayer
+	}
+	fmt.Println(lastActivatedLayer.Shape(), "kek")
 	for i := 1; i < len(net.Layers); i++ {
 		if net.Layers[i] == nil {
 			return fmt.Errorf("Discriminator's layer #%d is nil", i)
 		}
-		if net.Layers[i].WeightNode == nil {
+		if net.Layers[i].WeightNode == nil && !noWeightsAllowed(net.Layers[i].Type) {
 			return fmt.Errorf("Discriminator's layer's #%d WeightNode is nil", i)
-		}
-		tOp, err := gorgonia.Transpose(net.Layers[i].WeightNode)
-		if err != nil {
-			return errors.Wrap(err, fmt.Sprintf("Can't transpose weights of Discriminator's layer #%d", i))
 		}
 
 		layerNonActivated := &gorgonia.Node{}
 		switch net.Layers[i].Type {
 		case LayerLinear:
-			layerNonActivated, err = gorgonia.Mul(lastActivatedLayer, tOp)
+			tOp, err := gorgonia.Transpose(net.Layers[i].WeightNode)
 			if err != nil {
-				return errors.Wrap(err, fmt.Sprintf("Can't multiply input and weights of Discriminator's layer #%d", i))
+				return errors.Wrap(err, fmt.Sprintf("Can't transpose weights of Discriminator's layer #%d", i))
+			}
+			if batchSize < 2 {
+				layerNonActivated, err = gorgonia.Mul(lastActivatedLayer, tOp)
+				if err != nil {
+					return errors.Wrap(err, fmt.Sprintf("Can't multiply input and weights of Discriminator's layer #%d", i))
+				}
+			} else {
+				layerNonActivated, err = gorgonia.BatchedMatMul(lastActivatedLayer, tOp)
+				if err != nil {
+					return errors.Wrap(err, fmt.Sprintf("Can't multiply input and weights of Discriminator's layer #%d", i))
+				}
+			}
+			break
+		case LayerConvolutional:
+			layerNonActivated, err = gorgonia.Conv2d(lastActivatedLayer, net.Layers[i].WeightNode, tensor.Shape{net.Layers[i].KernelHeight, net.Layers[i].KernelWidth}, net.Layers[i].Padding, net.Layers[i].Stride, net.Layers[i].Dilation)
+			if err != nil {
+				return errors.Wrap(err, fmt.Sprintf("Can't convolve[2D] input by kernel of Discriminator's layer #%d", i))
+			}
+			break
+		case LayerMaxpool:
+			layerNonActivated, err = gorgonia.MaxPool2D(lastActivatedLayer, tensor.Shape{net.Layers[i].KernelHeight, net.Layers[i].KernelWidth}, net.Layers[i].Padding, net.Layers[i].Stride)
+			if err != nil {
+				return errors.Wrap(err, fmt.Sprintf("Can't maxpool[2D] input by kernel of Discriminator's layer #%d", i))
+			}
+			break
+		case LayerFlatten:
+			layerNonActivated, err = gorgonia.Reshape(lastActivatedLayer, tensor.Shape{batchSize, lastActivatedLayer.Shape().TotalSize() / batchSize})
+			if err != nil {
+				return errors.Wrap(err, fmt.Sprintf("Can't flatten input of Discriminator's layer #%d", i))
+			}
+			break
+		case LayerReshape:
+			layerNonActivated, err = gorgonia.Reshape(lastActivatedLayer, net.Layers[i].ReshapeDims)
+			if err != nil {
+				return errors.Wrap(err, fmt.Sprintf("Can't reshape input of Discriminator's layer #%d", i))
 			}
 			break
 		default:
@@ -136,6 +208,7 @@ func (net *Discriminator) Fwd(input *gorgonia.Node, batchSize int) error {
 		if i == len(net.Layers)-1 {
 			net.out = layerActivated
 		}
+		fmt.Println(layerNonActivated.Shape(), "kek")
 	}
 	return nil
 }
