@@ -112,23 +112,13 @@ func main() {
 	tmGenerator := gorgonia.NewTapeMachine(ganGraph)
 	defer tmGenerator.Close()
 
-	// Define loss function for GAN as
-	// loss{i} = (gan_out{i} - target{i})^2
 	targetDiscriminatorGAN := gorgonia.NewMatrix(ganGraph, gorgonia.Float64, gorgonia.WithShape(definedGAN.Out().Shape()...), gorgonia.WithName("gan_discriminator_target"))
-	lossDiscriminatorGAN := gorgonia.Must(
-		gorgonia.Square(
-			gorgonia.Must(
-				gorgonia.Sub(
-					definedGAN.Out(),
-					targetDiscriminatorGAN,
-				),
-			),
-		),
-	)
-	gorgonia.WithName("gan_discriminator_loss")(lossDiscriminatorGAN)
-	// Define cost function for GAN as
-	// cost = AVG(loss{i=1...N})
-	cost := gorgonia.Must(gorgonia.Mean(lossDiscriminatorGAN))
+	/* Define cost for GAN as*/
+	cost, err := gan.MSELoss(definedGAN.Out(), targetDiscriminatorGAN, batchSize)
+	if err != nil {
+		panic(err)
+	}
+	gorgonia.WithName("gan_discriminator_loss")(cost)
 	// Define gradients for GAN
 	_, err = gorgonia.Grad(cost, definedGAN.Learnables()...)
 	if err != nil {
@@ -136,22 +126,13 @@ func main() {
 	}
 
 	// Define loss function for Discriminator in training mode as
-	// loss{i} = (gan_out{i} - target{i})^2
 	targetDiscriminatorTrain := gorgonia.NewMatrix(trainDiscriminatorGraph, gorgonia.Float64, gorgonia.WithShape(2*batchSize, 1), gorgonia.WithName("discriminator_target"))
-	losses0_train := gorgonia.Must(
-		gorgonia.Square(
-			gorgonia.Must(
-				gorgonia.Sub(
-					discriminatorTrain.Out(),
-					targetDiscriminatorTrain,
-				),
-			),
-		),
-	)
-	gorgonia.WithName("discriminator_loss")(losses0_train)
-	// Define cost function for Discriminator in training mode as
-	// cost = AVG(loss{i=1...N})
-	costDiscriminatorTrain := gorgonia.Must(gorgonia.Mean(losses0_train))
+	/* Define cost for Distriminator in training mode as*/
+	costDiscriminatorTrain, err := gan.MSELoss(discriminatorTrain.Out(), targetDiscriminatorTrain, batchSize)
+	if err != nil {
+		panic(err)
+	}
+	gorgonia.WithName("discriminator_loss")(cost)
 	// Define gradients for Discriminator in training mode
 	_, err = gorgonia.Grad(costDiscriminatorTrain, discriminatorTrain.Learnables()...)
 	if err != nil {
