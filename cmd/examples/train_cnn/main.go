@@ -82,26 +82,13 @@ func main() {
 	var cnnOut gorgonia.Value
 	gorgonia.Read(simpleCNN.Out(), &cnnOut)
 
-	/*
-		Define loss function as:
-		loss{i} = (gan_out{i} - target{i})^2
-	*/
-	lossFunc := gorgonia.Must(
-		gorgonia.Square(
-			gorgonia.Must(
-				gorgonia.Sub(
-					simpleCNN.Out(),
-					targetCNN,
-				),
-			),
-		),
-	)
-	gorgonia.WithName("discriminator_loss")(lossFunc)
-	/*
-		Define cost function as:
-		cost = AVG(loss{i=1...N})
-	*/
-	cost := gorgonia.Must(gorgonia.Mean(lossFunc))
+	/* Prepare cost node */
+	cost, err := gan.MSELoss(simpleCNN.Out(), targetCNN, batchSize)
+	if err != nil {
+		panic(err)
+	}
+	gorgonia.WithName("discriminator_loss")(cost)
+
 	/* Define gradients */
 	_, err = gorgonia.Grad(cost, simpleCNN.Learnables()...)
 	if err != nil {
