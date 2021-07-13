@@ -1,6 +1,10 @@
 # Generative adversarial networks
 **Recipe for simple GAN in Golang ecosystem via [Gorgonia library](https://gorgonia.org/)**
 
+Generating f(x) = x^2             |  Generating f(x) = sin(x)
+:-------------------------:|:-------------------------:
+<img src="cmd/examples/parabola/output/out_parabola.gif" width="240">  |  <img src="cmd/examples/sin/output/out_sine.gif" width="240">
+
 
 ## Table of Contents
 
