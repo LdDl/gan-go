@@ -103,7 +103,9 @@ Current stage of TODO list:
 - [x] Reduce duplicating of code for *.Fwd()* method of each neural network type (GAN/Discriminator/Generator)
 - [ ] Switch **Layer** from *struct* to *interface*
 - [x] Add basic layers: Linear, Convolutional, Maxpool, Flatten
-- [~] Deal with batch process
+- [ ] Deal with batch process 
+- [ ] More loss function **WIP**
+- [ ] Examples for text data generation
 
 ## Code explanation
 @TODO

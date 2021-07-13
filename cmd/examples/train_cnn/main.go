@@ -83,7 +83,7 @@ func main() {
 	gorgonia.Read(simpleCNN.Out(), &cnnOut)
 
 	/* Prepare cost node */
-	cost, err := gan.MSELoss(simpleCNN.Out(), targetCNN, batchSize)
+	cost, err := gan.MSELoss(simpleCNN.Out(), targetCNN)
 	if err != nil {
 		panic(err)
 	}

@@ -114,7 +114,7 @@ func main() {
 
 	targetDiscriminatorGAN := gorgonia.NewMatrix(ganGraph, gorgonia.Float64, gorgonia.WithShape(definedGAN.Out().Shape()...), gorgonia.WithName("gan_discriminator_target"))
 	/* Define cost for GAN as*/
-	cost, err := gan.MSELoss(definedGAN.Out(), targetDiscriminatorGAN, batchSize)
+	cost, err := gan.MSELoss(definedGAN.Out(), targetDiscriminatorGAN)
 	if err != nil {
 		panic(err)
 	}
@@ -125,14 +125,13 @@ func main() {
 		panic(err)
 	}
 
-	// Define loss function for Discriminator in training mode as
 	targetDiscriminatorTrain := gorgonia.NewMatrix(trainDiscriminatorGraph, gorgonia.Float64, gorgonia.WithShape(2*batchSize, 1), gorgonia.WithName("discriminator_target"))
 	/* Define cost for Distriminator in training mode as*/
-	costDiscriminatorTrain, err := gan.MSELoss(discriminatorTrain.Out(), targetDiscriminatorTrain, batchSize)
+	costDiscriminatorTrain, err := gan.MSELoss(discriminatorTrain.Out(), targetDiscriminatorTrain)
 	if err != nil {
 		panic(err)
 	}
-	gorgonia.WithName("discriminator_loss")(cost)
+	gorgonia.WithName("discriminator_loss")(costDiscriminatorTrain)
 	// Define gradients for Discriminator in training mode
 	_, err = gorgonia.Grad(costDiscriminatorTrain, discriminatorTrain.Learnables()...)
 	if err != nil {

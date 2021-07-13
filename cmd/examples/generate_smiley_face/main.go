@@ -122,7 +122,7 @@ func main() {
 
 	// Define loss function for GAN as
 	targetDiscriminatorGAN := gorgonia.NewTensor(ganGraph, gorgonia.Float64, definedGAN.Out().Dims(), gorgonia.WithShape(definedGAN.Out().Shape()...), gorgonia.WithName("gan_discriminator_target"))
-	cost, err := gan.MSELoss(definedGAN.Out(), targetDiscriminatorGAN, batchSize)
+	cost, err := gan.MSELoss(definedGAN.Out(), targetDiscriminatorGAN)
 	if err != nil {
 		panic(err)
 	}
@@ -135,7 +135,7 @@ func main() {
 
 	// Define loss function for Discriminator in training mode as
 	targetDiscriminatorTrain := gorgonia.NewTensor(trainDiscriminatorGraph, gorgonia.Float64, 2, gorgonia.WithShape(2*batchSize, 1), gorgonia.WithName("discriminator_target"))
-	costDiscriminatorTrain, err := gan.MSELoss(discriminatorTrain.Out(), targetDiscriminatorTrain, batchSize)
+	costDiscriminatorTrain, err := gan.MSELoss(discriminatorTrain.Out(), targetDiscriminatorTrain)
 	if err != nil {
 		panic(err)
 	}
@@ -426,7 +426,7 @@ func defineGenerator(g *gorgonia.ExprGraph) *gan.GeneratorNet {
 				WeightNode:   gen_w0,
 				BiasNode:     nil,
 				Type:         gan.LayerConvolutional,
-				Activation:   gan.Sigmoid,
+				Activation:   gan.Rectify,
 				KernelHeight: 3,
 				KernelWidth:  3,
 				Padding:      []int{0, 0},
@@ -445,7 +445,7 @@ func defineGenerator(g *gorgonia.ExprGraph) *gan.GeneratorNet {
 				WeightNode:   gen_w1,
 				BiasNode:     nil,
 				Type:         gan.LayerConvolutional,
-				Activation:   gan.Sigmoid,
+				Activation:   gan.Rectify,
 				KernelHeight: 3,
 				KernelWidth:  3,
 				Padding:      []int{0, 0},
@@ -464,7 +464,7 @@ func defineGenerator(g *gorgonia.ExprGraph) *gan.GeneratorNet {
 				WeightNode:   gen_w2,
 				BiasNode:     nil,
 				Type:         gan.LayerConvolutional,
-				Activation:   gan.Sigmoid,
+				Activation:   gan.Rectify,
 				KernelHeight: 3,
 				KernelWidth:  3,
 				Padding:      []int{0, 0},
@@ -483,7 +483,7 @@ func defineGenerator(g *gorgonia.ExprGraph) *gan.GeneratorNet {
 				WeightNode:   gen_w3,
 				BiasNode:     nil,
 				Type:         gan.LayerConvolutional,
-				Activation:   gan.Sigmoid,
+				Activation:   gan.Rectify,
 				KernelHeight: 3,
 				KernelWidth:  3,
 				Padding:      []int{0, 0},
