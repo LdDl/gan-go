@@ -3,6 +3,7 @@ package gan_go
 import (
 	"fmt"
 
+	"github.com/pkg/errors"
 	"gorgonia.org/gorgonia"
 )
 
@@ -18,11 +19,11 @@ const (
 func MSELoss(a, b *gorgonia.Node, reduction ...LossReduction) (*gorgonia.Node, error) {
 	sub, err := gorgonia.Sub(a, b)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "Can't do (A-B)")
 	}
 	sqr, err := gorgonia.Square(sub)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "Can't do (x^2)")
 	}
 	reductionDefault := LossReductionMean
 	if len(reduction) != 0 {
@@ -43,15 +44,15 @@ func MSELoss(a, b *gorgonia.Node, reduction ...LossReduction) (*gorgonia.Node, e
 func CrossEntropyLoss(a, b *gorgonia.Node, reduction ...LossReduction) (*gorgonia.Node, error) {
 	log, err := gorgonia.Log(a)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "Can't do log(A)")
 	}
 	neg, err := gorgonia.Neg(log)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "Can't do -1*x")
 	}
 	hprod, err := gorgonia.HadamardProd(neg, b)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "Can't do (x.*B)")
 	}
 	reductionDefault := LossReductionMean
 	if len(reduction) != 0 {
