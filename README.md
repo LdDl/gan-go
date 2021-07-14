@@ -111,7 +111,7 @@ Current stage of TODO list for future releases:
 - [ ] More loss function **WIP**
     - [x] Cross Entropy
     - [x] Binary Cross Entropy
-    - [ ] L1
+    - [x] L1
     - [ ] Huber
 - [ ] Examples for text data generation
 

@@ -125,3 +125,29 @@ func BinaryCrossEntropyLoss(a, b *gorgonia.Node, reduction ...LossReduction) (*g
 		return nil, fmt.Errorf("Reduction type %d is not supported", reductionDefault)
 	}
 }
+
+// L1Loss See ref. https://en.wikipedia.org/wiki/Least_absolute_deviations
+// Default reduction is 'mean'
+func L1Loss(a, b *gorgonia.Node, reduction ...LossReduction) (*gorgonia.Node, error) {
+	sub, err := gorgonia.Sub(a, b)
+	if err != nil {
+		return nil, errors.Wrap(err, "Can't do (A-B)")
+	}
+	abs, err := gorgonia.Abs(sub)
+	if err != nil {
+		return nil, errors.Wrap(err, "Can't do |x|")
+	}
+
+	reductionDefault := LossReductionMean
+	if len(reduction) != 0 {
+		reductionDefault = reduction[0]
+	}
+	switch reductionDefault {
+	case LossReductionSum:
+		return gorgonia.Sum(abs)
+	case LossReductionMean:
+		return gorgonia.Mean(abs)
+	default:
+		return nil, fmt.Errorf("Reduction type %d is not supported", reductionDefault)
+	}
+}
