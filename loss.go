@@ -3,6 +3,7 @@ package gan_go
 import (
 	"fmt"
 
+	"github.com/chewxy/math32"
 	"github.com/pkg/errors"
 	"gorgonia.org/gorgonia"
 )
@@ -66,4 +67,69 @@ func CrossEntropyLoss(a, b *gorgonia.Node, reduction ...LossReduction) (*gorgoni
 	default:
 		return nil, fmt.Errorf("Reduction type %d is not supported", reductionDefault)
 	}
+}
+
+// BinaryCrossEntropyLoss See ref. https://en.wikipedia.org/wiki/Cross_entropy#Cross-entropy_loss_function_and_logistic_regression
+// Pretty the same as CrossEntropyLoss. BUT for C=2, where C - number of classes
+// In case of binary variation of cross entropy loss: sample could belong to 0 or 1 only.
+// Default reduction is 'mean'
+func BinaryCrossEntropyLoss(a, b *gorgonia.Node, reduction ...LossReduction) (*gorgonia.Node, error) {
+	// Main part the same as cross entropy
+	logMain, err := gorgonia.Log(a)
+	if err != nil {
+		return nil, errors.Wrap(err, "Can't do log(A)")
+	}
+	negMain, err := gorgonia.Neg(logMain)
+	if err != nil {
+		return nil, errors.Wrap(err, "Can't do -1*x")
+	}
+
+	hprodMain, err := gorgonia.HadamardProd(negMain, b)
+	if err != nil {
+		return nil, errors.Wrap(err, "Can't do (x.*B)")
+	}
+
+	// Here comes another part
+	onesTensor := gorgonia.NewTensor(a.Graph(), a.Dtype(), a.Dims(), gorgonia.WithShape(a.Shape()...), gorgonia.WithInit(gorgonia.Ones()))
+	logBin, err := gorgonia.Sub(onesTensor, a)
+	if err != nil {
+		return nil, errors.Wrap(err, "Can't do log(1-A)")
+	}
+	negBin, err := gorgonia.Neg(logBin)
+	if err != nil {
+		return nil, errors.Wrap(err, "Can't do -1*x")
+	}
+	preLogBin, err := gorgonia.Sub(onesTensor, b)
+	if err != nil {
+		return nil, errors.Wrap(err, "Can't do (1-B)")
+	}
+	hprodBin, err := gorgonia.HadamardProd(negBin, preLogBin)
+	if err != nil {
+		return nil, errors.Wrap(err, "Can't do (x.*B)")
+	}
+	hprod, err := gorgonia.Add(hprodMain, hprodBin)
+	if err != nil {
+		return nil, errors.Wrap(err, "Can't do (x+y)")
+	}
+
+	reductionDefault := LossReductionMean
+	if len(reduction) != 0 {
+		reductionDefault = reduction[0]
+	}
+
+	switch reductionDefault {
+	case LossReductionSum:
+		return gorgonia.Sum(hprod)
+	case LossReductionMean:
+		return gorgonia.Mean(hprod)
+	default:
+		return nil, fmt.Errorf("Reduction type %d is not supported", reductionDefault)
+	}
+}
+
+func bceLossF32(target, pred float32) float32 {
+	if target == 1.0 {
+		return -(math32.Log(pred + 1e-16))
+	}
+	return -(math32.Log((1.0 - pred) + 1e-16))
 }
