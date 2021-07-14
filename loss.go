@@ -11,7 +11,6 @@ type LossReduction uint16
 const (
 	LossReductionSum = LossReduction(iota)
 	LossReductionMean
-	LossReductionMean33
 )
 
 // MSELoss See ref. https://en.wikipedia.org/wiki/Mean_squared_error
