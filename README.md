@@ -103,12 +103,16 @@ Plotting library - [gonum](https://github.com/gonum/plot#gonum-plot)
 
 
 ## ToDo
-Current stage of TODO list:
+Current stage of TODO list for future releases:
 - [x] Reduce duplicating of code for *.Fwd()* method of each neural network type (GAN/Discriminator/Generator)
 - [ ] Switch **Layer** from *struct* to *interface*
 - [x] Add basic layers: Linear, Convolutional, Maxpool, Flatten
 - [ ] Deal with batch process 
 - [ ] More loss function **WIP**
+    - [x] Cross Entropy
+    - [x] Binary Cross Entropy
+    - [ ] L1
+    - [ ] Huber
 - [ ] Examples for text data generation
 
 ## Code explanation
