@@ -3,7 +3,6 @@ package gan_go
 import (
 	"fmt"
 
-	"github.com/chewxy/math32"
 	"github.com/pkg/errors"
 	"gorgonia.org/gorgonia"
 )
@@ -125,11 +124,4 @@ func BinaryCrossEntropyLoss(a, b *gorgonia.Node, reduction ...LossReduction) (*g
 	default:
 		return nil, fmt.Errorf("Reduction type %d is not supported", reductionDefault)
 	}
-}
-
-func bceLossF32(target, pred float32) float32 {
-	if target == 1.0 {
-		return -(math32.Log(pred + 1e-16))
-	}
-	return -(math32.Log((1.0 - pred) + 1e-16))
 }
