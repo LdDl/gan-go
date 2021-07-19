@@ -108,13 +108,16 @@ Current stage of TODO list for future releases:
 - [ ] Switch **Layer** from *struct* to *interface*
 - [x] Add basic layers: Linear, Convolutional, Maxpool, Flatten
 - [ ] Deal with batch process 
-- [ ] More loss function **WIP**
+- [x] More loss function
     - [x] Cross Entropy
     - [x] Binary Cross Entropy
     - [x] L1
-    - [ ] Huber
-- [ ] Examples for text data generation
-
+    - [x] Huber (PSEUDO)
+- [ ] Examples for text data generation **WIP**
+- [ ] Simple LSTM
+    - [ ] Proper layer types for RNN **WIP**
+    - [ ] Examples
+    
 ## Code explanation
 @TODO
 
