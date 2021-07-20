@@ -122,7 +122,7 @@ func main() {
 
 	// Define loss function for GAN as
 	targetDiscriminatorGAN := gorgonia.NewTensor(ganGraph, gorgonia.Float64, definedGAN.Out().Dims(), gorgonia.WithShape(definedGAN.Out().Shape()...), gorgonia.WithName("gan_discriminator_target"))
-	cost, err := gan.MSELoss(definedGAN.Out(), targetDiscriminatorGAN)
+	cost, err := gan.BinaryCrossEntropyLoss(definedGAN.Out(), targetDiscriminatorGAN)
 	if err != nil {
 		panic(err)
 	}
@@ -135,7 +135,7 @@ func main() {
 
 	// Define loss function for Discriminator in training mode as
 	targetDiscriminatorTrain := gorgonia.NewTensor(trainDiscriminatorGraph, gorgonia.Float64, 2, gorgonia.WithShape(2*batchSize, 1), gorgonia.WithName("discriminator_target"))
-	costDiscriminatorTrain, err := gan.MSELoss(discriminatorTrain.Out(), targetDiscriminatorTrain)
+	costDiscriminatorTrain, err := gan.BinaryCrossEntropyLoss(discriminatorTrain.Out(), targetDiscriminatorTrain)
 	if err != nil {
 		panic(err)
 	}
@@ -434,6 +434,10 @@ func defineGenerator(g *gorgonia.ExprGraph) *gan.GeneratorNet {
 				Dilation:     []int{1, 1},
 			},
 			{
+				Type:        gan.LayerDropout,
+				Probability: 0.6,
+			},
+			{
 				Type:         gan.LayerMaxpool,
 				Activation:   gan.NoActivation,
 				KernelHeight: 2,
@@ -451,6 +455,10 @@ func defineGenerator(g *gorgonia.ExprGraph) *gan.GeneratorNet {
 				Padding:      []int{0, 0},
 				Stride:       []int{1, 1},
 				Dilation:     []int{1, 1},
+			},
+			{
+				Type:        gan.LayerDropout,
+				Probability: 0.5,
 			},
 			{
 				Type:         gan.LayerMaxpool,
@@ -472,6 +480,10 @@ func defineGenerator(g *gorgonia.ExprGraph) *gan.GeneratorNet {
 				Dilation:     []int{1, 1},
 			},
 			{
+				Type:        gan.LayerDropout,
+				Probability: 0.2,
+			},
+			{
 				Type:         gan.LayerMaxpool,
 				Activation:   gan.NoActivation,
 				KernelHeight: 2,
@@ -489,6 +501,10 @@ func defineGenerator(g *gorgonia.ExprGraph) *gan.GeneratorNet {
 				Padding:      []int{0, 0},
 				Stride:       []int{1, 1},
 				Dilation:     []int{1, 1},
+			},
+			{
+				Type:        gan.LayerDropout,
+				Probability: 0.2,
 			},
 			{
 				Type:         gan.LayerMaxpool,

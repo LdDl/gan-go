@@ -1,0 +1,291 @@
+Actual smiley face:
+	  x x       x x   
+	  x x       x x   
+	  x x       x x   
+	  x x       x x   
+	        x         
+	        x         
+	      x x x       
+	x x           x x 
+	  x x x   x x x   
+	      x x x       
+Epoch 0:
+	Discriminator's loss: 0.03985057069991532
+	Generator's loss: 0.5065247431386946
+	Taken time: 241.4238ms
+	          x x x   
+	      x x x     x 
+	      x x x     x 
+	x   x x x     x x 
+	x         x     x 
+	  x x       x x x 
+	x x     x x     x 
+	x x x   x x     x 
+	x   x   x x       
+	x   x x x x x x   
+Epoch 50:
+	Discriminator's loss: -0.09773027757315267
+	Generator's loss: 0.44522350079447853
+	Taken time: 10.7638851s
+	      x     x x   
+	  x x           x 
+	  x   x   x     x 
+	x x x x     x x x 
+	  x   x   x x x   
+	  x x   x   x x   
+	x x x   x x x   x 
+	x x x   x x       
+	x       x       x 
+	x   x x x   x x x 
+Epoch 100:
+	Discriminator's loss: -0.1988249558124741
+	Generator's loss: 0.8685825678363062
+	Taken time: 10.4553696s
+	  x   x     x x   
+	  x x       x x x 
+	  x x x         x 
+	x x x       x x x 
+	          x   x   
+	  x x   x   x x   
+	x x x   x x x   x 
+	x   x x x x x     
+	        x     x x 
+	x     x     x x x 
+Epoch 150:
+	Discriminator's loss: -0.2656567763836979
+	Generator's loss: 1.2374070743037278
+	Taken time: 10.696241s
+	  x   x     x x   
+	  x x       x x x 
+	  x x x         x 
+	x x x       x x x 
+	              x   
+	    x   x     x   
+	  x     x x x   x 
+	x x x x x x x     
+	        x     x x 
+	x x   x     x x x 
+Epoch 200:
+	Discriminator's loss: -0.2625222132210063
+	Generator's loss: 1.1797270864508425
+	Taken time: 10.0746897s
+	  x   x     x x   
+	  x x       x x x 
+	  x   x         x 
+	x x x       x x x 
+	                  
+	        x         
+	  x     x x     x 
+	x     x     x     
+	                x 
+	      x     x x x 
+Epoch 250:
+	Discriminator's loss: -0.24268849080339822
+	Generator's loss: 1.069402911848018
+	Taken time: 10.8995229s
+	  x x       x x   
+	  x x       x x x 
+	  x             x 
+	  x x       x x x 
+	                  
+	        x         
+	  x     x x     x 
+	x                 
+	                x 
+	      x     x x x 
+Epoch 300:
+	Discriminator's loss: -0.2801156207839619
+	Generator's loss: 1.2364060944896789
+	Taken time: 9.2454939s
+	  x x       x     
+	  x x         x x 
+	  x x           x 
+	  x x         x x 
+	                  
+	        x         
+	        x     x x 
+	x     x           
+	                x 
+	      x x   x x x 
+Epoch 350:
+	Discriminator's loss: -0.3150401653458222
+	Generator's loss: 1.3985658498038935
+	Taken time: 9.2203359s
+	  x               
+	  x x         x x 
+	  x x         x x 
+	  x x         x x 
+	                  
+	        x         
+	        x     x x 
+	                  
+	                x 
+	        x   x x x 
+Epoch 400:
+	Discriminator's loss: -0.33878778972009255
+	Generator's loss: 1.5046870291892205
+	Taken time: 9.1793615s
+	  x x             
+	  x x         x x 
+	  x x         x x 
+	  x x           x 
+	        x         
+	        x         
+	                x 
+	                  
+	      x         x 
+	      x x x x   x 
+Epoch 450:
+	Discriminator's loss: -0.326769121231567
+	Generator's loss: 1.4293337338550707
+	Taken time: 9.2028276s
+	  x           x   
+	  x           x x 
+	  x         x x x 
+	  x         x   x 
+	        x         
+	        x         
+	                x 
+	x x               
+	      x         x 
+	      x x x x   x 
+Epoch 500:
+	Discriminator's loss: -0.3082431638976455
+	Generator's loss: 1.3042324636235243
+	Taken time: 9.1751188s
+	              x   
+	  x           x x 
+	  x         x x x 
+	            x   x 
+	                  
+	        x         
+	                x 
+	x x           x   
+	      x         x 
+	      x x x x x x 
+Epoch 550:
+	Discriminator's loss: -0.21559804419748904
+	Generator's loss: 0.8665907352192849
+	Taken time: 9.1825897s
+	              x   
+	              x x 
+	  x             x 
+	            x   x 
+	                  
+	        x         
+	      x x       x 
+	x x           x   
+	      x   x     x 
+	      x x x x x x 
+Epoch 600:
+	Discriminator's loss: -0.26346501726356475
+	Generator's loss: 1.0705284871902823
+	Taken time: 9.1500374s
+	              x   
+	                x 
+	                x 
+	                x 
+	                  
+	        x         
+	      x x x     x 
+	x x           x   
+	      x   x     x 
+	      x x x     x 
+Epoch 650:
+	Discriminator's loss: -0.19080728985300505
+	Generator's loss: 0.7532180725466704
+	Taken time: 9.7300317s
+	              x   
+	              x x 
+	  x             x 
+	              x x 
+	                  
+	        x         
+	      x x       x 
+	x x           x   
+	    x x   x     x 
+	      x x x     x 
+Epoch 700:
+	Discriminator's loss: -0.18986892297607094
+	Generator's loss: 0.7688146631975125
+	Taken time: 9.1517124s
+	              x   
+	              x x 
+	  x x       x   x 
+	              x x 
+	                  
+	                  
+	      x x       x 
+	  x           x   
+	  x x     x     x 
+	      x   x     x 
+Epoch 750:
+	Discriminator's loss: -0.22968820127272882
+	Generator's loss: 0.9648624934515393
+	Taken time: 9.1528785s
+	              x   
+	            x x x 
+	  x x       x   x 
+	    x       x x x 
+	                  
+	                  
+	      x x       x 
+	x x               
+	  x x           x 
+	      x   x     x 
+Epoch 800:
+	Discriminator's loss: -0.15708787008655073
+	Generator's loss: 0.707728915372022
+	Taken time: 9.2531616s
+	  x x         x   
+	    x       x x x 
+	  x x       x x x 
+	    x       x x x 
+	        x         
+	        x         
+	      x x x     x 
+	                  
+	  x x     x x x x 
+	      x   x     x 
+Epoch 850:
+	Discriminator's loss: -0.14037358139120096
+	Generator's loss: 0.6498938954756357
+	Taken time: 9.1539854s
+	  x x         x   
+	    x       x x x 
+	  x x       x x x 
+	    x       x x x 
+	        x         
+	        x         
+	        x x     x 
+	x             x   
+	  x x     x x x x 
+	      x   x     x 
+Epoch 900:
+	Discriminator's loss: -0.17985140337028996
+	Generator's loss: 0.8120936041297813
+	Taken time: 9.660403s
+	  x x       x x   
+	  x x       x x x 
+	  x x       x x x 
+	    x       x x x 
+	        x         
+	        x         
+	        x x     x 
+	x x           x   
+	  x x x   x x x x 
+	      x   x     x 
+Epoch 950:
+	Discriminator's loss: -0.12900370997881994
+	Generator's loss: 0.609726935286137
+	Taken time: 9.825535s
+	  x x       x x   
+	  x x       x x x 
+	  x x       x   x 
+	  x x         x x 
+	        x         
+	        x         
+	        x x     x 
+	x x           x   
+	  x x x   x x x x 
+	      x x x     x 
