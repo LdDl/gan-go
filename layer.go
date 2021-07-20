@@ -17,6 +17,7 @@ type Layer struct {
 	Stride       []int
 	Dilation     []int
 	ReshapeDims  []int
+	Probability  float64
 }
 
 type LayerType uint16
@@ -27,10 +28,11 @@ const (
 	LayerConvolutional
 	LayerMaxpool
 	LayerReshape
+	LayerDropout
 )
 
 var (
-	allowedNoWeights = []LayerType{LayerMaxpool, LayerFlatten, LayerReshape}
+	allowedNoWeights = []LayerType{LayerMaxpool, LayerFlatten, LayerReshape, LayerDropout}
 )
 
 func noWeightsAllowed(checkType LayerType) bool {
@@ -44,4 +46,11 @@ func checkLayerType(checkType LayerType, t ...LayerType) bool {
 		}
 	}
 	return false
+}
+
+func checkF64ValueInRange(input, min, max float64) bool {
+	if input > max && input < min {
+		return false
+	}
+	return true
 }

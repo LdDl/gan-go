@@ -107,6 +107,17 @@ func (net *Network) Fwd(input *gorgonia.Node, batchSize int) error {
 			return errors.Wrap(err, "Can't reshape input of Network's layer #0")
 		}
 		break
+	case LayerDropout:
+		// Help developers to not provide NoActivation for dropout layer
+		net.Layers[0].Activation = NoActivation
+		if ok := checkF64ValueInRange(net.Layers[0].Probability, 0.0, 1.0); !ok {
+			return fmt.Errorf("Dropout probability should lie in [0;1] for Network's layer #0. Got %f", net.Layers[0].Probability)
+		}
+		firstLayerNonActivated, err = gorgonia.Dropout(input, net.Layers[0].Probability)
+		if err != nil {
+			return errors.Wrap(err, "Can't dilute input of Network's layer #0")
+		}
+		break
 	default:
 		return fmt.Errorf("Layer #0's type '%d' (uint16) is not handled [Network]", net.Layers[0].Type)
 	}
@@ -184,6 +195,17 @@ func (net *Network) Fwd(input *gorgonia.Node, batchSize int) error {
 			layerNonActivated, err = gorgonia.Reshape(lastActivatedLayer, net.Layers[i].ReshapeDims)
 			if err != nil {
 				return errors.Wrap(err, fmt.Sprintf("Can't reshape input of Network's layer #%d", i))
+			}
+			break
+		case LayerDropout:
+			// Help developers to not provide NoActivation for dropout layer
+			net.Layers[i].Activation = NoActivation
+			if ok := checkF64ValueInRange(net.Layers[i].Probability, 0.0, 1.0); !ok {
+				return fmt.Errorf("Dropout probability should lie in [0;1] for Network's layer #%d. Got %f", i, net.Layers[i].Probability)
+			}
+			layerNonActivated, err = gorgonia.Dropout(lastActivatedLayer, net.Layers[i].Probability)
+			if err != nil {
+				return errors.Wrap(err, fmt.Sprintf("Can't dilute input of Network's layer #%d", i))
 			}
 			break
 		default:
