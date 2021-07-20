@@ -291,6 +291,10 @@ func defineCNN(g *gorgonia.ExprGraph) *gan.DiscriminatorNet {
 				Dilation:     []int{1, 1},
 			},
 			{
+				Type:        gan.LayerDropout,
+				Probability: 0.3,
+			},
+			{
 				Type:         gan.LayerMaxpool,
 				Activation:   gan.NoActivation,
 				KernelHeight: 2,
