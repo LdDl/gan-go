@@ -5,7 +5,6 @@ import (
 
 	"github.com/pkg/errors"
 	"gorgonia.org/gorgonia"
-	"gorgonia.org/tensor"
 )
 
 // Network Abstraction for neural network.
@@ -59,83 +58,14 @@ func (net *Network) Fwd(input *gorgonia.Node, batchSize int) error {
 	if net.Layers[0] == nil {
 		return fmt.Errorf("Network's layer #0 is nil")
 	}
-	if net.Layers[0].WeightNode == nil && !noWeightsAllowed(net.Layers[0].Type) {
-		return fmt.Errorf("Network's layer #0 WeightNode is nil")
+
+	// Feedforward input through first layer
+	firstLayerNonActivated, err := net.Layers[0].Fwd(input, batchSize)
+	if err != nil {
+		return errors.Wrap(err, "[Network, Layer #0] Can't feedforward input before activation")
 	}
-
-	firstLayerNonActivated := &gorgonia.Node{}
-
-	switch net.Layers[0].Type {
-	case LayerLinear:
-		tOp, err := gorgonia.Transpose(net.Layers[0].WeightNode)
-		if err != nil {
-			return errors.Wrap(err, "Can't transpose weights of Network's layer #0")
-		}
-		if batchSize < 2 {
-			firstLayerNonActivated, err = gorgonia.Mul(input, tOp)
-			if err != nil {
-				return errors.Wrap(err, "Can't multiply input and weights of Network's layer #0")
-			}
-		} else {
-			firstLayerNonActivated, err = gorgonia.BatchedMatMul(input, tOp)
-			if err != nil {
-				return errors.Wrap(err, "Can't multiply input and weights of Network's layer #0")
-			}
-		}
-		break
-	case LayerConvolutional:
-		firstLayerNonActivated, err = gorgonia.Conv2d(input, net.Layers[0].WeightNode, tensor.Shape{net.Layers[0].KernelHeight, net.Layers[0].KernelWidth}, net.Layers[0].Padding, net.Layers[0].Stride, net.Layers[0].Dilation)
-		if err != nil {
-			return errors.Wrap(err, "Can't convolve[2D] input by kernel of Network's layer #0")
-		}
-		break
-	case LayerMaxpool:
-		firstLayerNonActivated, err = gorgonia.MaxPool2D(input, tensor.Shape{net.Layers[0].KernelHeight, net.Layers[0].KernelWidth}, net.Layers[0].Padding, net.Layers[0].Stride)
-		if err != nil {
-			return errors.Wrap(err, "Can't maxpool[2D] input by kernel of Network's layer #0")
-		}
-		break
-	case LayerFlatten:
-		firstLayerNonActivated, err = gorgonia.Reshape(input, tensor.Shape{batchSize, input.Shape().TotalSize() / batchSize})
-		if err != nil {
-			return errors.Wrap(err, "Can't flatten input of Network's layer #0")
-		}
-		break
-	case LayerReshape:
-		firstLayerNonActivated, err = gorgonia.Reshape(input, net.Layers[0].ReshapeDims)
-		if err != nil {
-			return errors.Wrap(err, "Can't reshape input of Network's layer #0")
-		}
-		break
-	case LayerDropout:
-		// Help developers to not provide NoActivation for dropout layer
-		net.Layers[0].Activation = NoActivation
-		if ok := checkF64ValueInRange(net.Layers[0].Probability, 0.0, 1.0); !ok {
-			return fmt.Errorf("Dropout probability should lie in [0;1] for Network's layer #0. Got %f", net.Layers[0].Probability)
-		}
-		firstLayerNonActivated, err = gorgonia.Dropout(input, net.Layers[0].Probability)
-		if err != nil {
-			return errors.Wrap(err, "Can't dilute input of Network's layer #0")
-		}
-		break
-	default:
-		return fmt.Errorf("Layer #0's type '%d' (uint16) is not handled [Network]", net.Layers[0].Type)
-	}
-
 	gorgonia.WithName(fmt.Sprintf("%s_0", networkName))(firstLayerNonActivated)
-	if net.Layers[0].BiasNode != nil {
-		if batchSize < 2 {
-			firstLayerNonActivated, err = gorgonia.Add(firstLayerNonActivated, net.Layers[0].BiasNode)
-			if err != nil {
-				return errors.Wrap(err, "Can't add bias to non-activated output of Network's layer #0")
-			}
-		} else {
-			firstLayerNonActivated, err = gorgonia.BroadcastAdd(firstLayerNonActivated, net.Layers[0].BiasNode, nil, []byte{0})
-			if err != nil {
-				return errors.Wrap(err, fmt.Sprintf("Can't add [in broadcast term with batch_size = %d] bias to non-activated output of Network's layer #0", batchSize))
-			}
-		}
-	}
+	// Activate first layer's output
 	firstLayerActivated, err := net.Layers[0].Activation(firstLayerNonActivated)
 	if err != nil {
 		return errors.Wrap(err, "Can't apply activation function to non-activated output of Network's layer #0")
@@ -146,6 +76,8 @@ func (net *Network) Fwd(input *gorgonia.Node, batchSize int) error {
 	if len(net.Layers) == 1 {
 		net.out = lastActivatedLayer
 	}
+
+	// Feedforward input through remaining layers
 	for i := 1; i < len(net.Layers); i++ {
 		if net.Layers[i] == nil {
 			return fmt.Errorf("Network's layer #%d is nil", i)
@@ -153,79 +85,13 @@ func (net *Network) Fwd(input *gorgonia.Node, batchSize int) error {
 		if net.Layers[i].WeightNode == nil && !noWeightsAllowed(net.Layers[i].Type) {
 			return fmt.Errorf("Network's layer's #%d WeightNode is nil", i)
 		}
-
-		layerNonActivated := &gorgonia.Node{}
-		switch net.Layers[i].Type {
-		case LayerLinear:
-			tOp, err := gorgonia.Transpose(net.Layers[i].WeightNode)
-			if err != nil {
-				return errors.Wrap(err, fmt.Sprintf("Can't transpose weights of Network's layer #%d", i))
-			}
-			if batchSize < 2 {
-				layerNonActivated, err = gorgonia.Mul(lastActivatedLayer, tOp)
-				if err != nil {
-					return errors.Wrap(err, fmt.Sprintf("Can't multiply input and weights of Network's layer #%d", i))
-				}
-			} else {
-				layerNonActivated, err = gorgonia.BatchedMatMul(lastActivatedLayer, tOp)
-				if err != nil {
-					return errors.Wrap(err, fmt.Sprintf("Can't multiply input and weights of Network's layer #%d", i))
-				}
-			}
-			break
-		case LayerConvolutional:
-			layerNonActivated, err = gorgonia.Conv2d(lastActivatedLayer, net.Layers[i].WeightNode, tensor.Shape{net.Layers[i].KernelHeight, net.Layers[i].KernelWidth}, net.Layers[i].Padding, net.Layers[i].Stride, net.Layers[i].Dilation)
-			if err != nil {
-				return errors.Wrap(err, fmt.Sprintf("Can't convolve[2D] input by kernel of Network's layer #%d", i))
-			}
-			break
-		case LayerMaxpool:
-			layerNonActivated, err = gorgonia.MaxPool2D(lastActivatedLayer, tensor.Shape{net.Layers[i].KernelHeight, net.Layers[i].KernelWidth}, net.Layers[i].Padding, net.Layers[i].Stride)
-			if err != nil {
-				return errors.Wrap(err, fmt.Sprintf("Can't maxpool[2D] input by kernel of Network's layer #%d", i))
-			}
-			break
-		case LayerFlatten:
-			layerNonActivated, err = gorgonia.Reshape(lastActivatedLayer, tensor.Shape{batchSize, lastActivatedLayer.Shape().TotalSize() / batchSize})
-			if err != nil {
-				return errors.Wrap(err, fmt.Sprintf("Can't flatten input of Network's layer #%d", i))
-			}
-			break
-		case LayerReshape:
-			layerNonActivated, err = gorgonia.Reshape(lastActivatedLayer, net.Layers[i].ReshapeDims)
-			if err != nil {
-				return errors.Wrap(err, fmt.Sprintf("Can't reshape input of Network's layer #%d", i))
-			}
-			break
-		case LayerDropout:
-			// Help developers to not provide NoActivation for dropout layer
-			net.Layers[i].Activation = NoActivation
-			if ok := checkF64ValueInRange(net.Layers[i].Probability, 0.0, 1.0); !ok {
-				return fmt.Errorf("Dropout probability should lie in [0;1] for Network's layer #%d. Got %f", i, net.Layers[i].Probability)
-			}
-			layerNonActivated, err = gorgonia.Dropout(lastActivatedLayer, net.Layers[i].Probability)
-			if err != nil {
-				return errors.Wrap(err, fmt.Sprintf("Can't dilute input of Network's layer #%d", i))
-			}
-			break
-		default:
-			return fmt.Errorf("Layer #%d's type '%d' (uint16) is not handled [Network]", i, net.Layers[i].Type)
+		// Feedforward input through i-th layer (i != 0)
+		layerNonActivated, err := net.Layers[i].Fwd(lastActivatedLayer, batchSize)
+		if err != nil {
+			return errors.Wrap(err, fmt.Sprintf("[Network, Layer #%d] Can't feedforward input before activation", i))
 		}
-
 		gorgonia.WithName(fmt.Sprintf("%s_%d", networkName, i))(layerNonActivated)
-		if net.Layers[i].BiasNode != nil {
-			if batchSize < 2 {
-				layerNonActivated, err = gorgonia.Add(layerNonActivated, net.Layers[i].BiasNode)
-				if err != nil {
-					return errors.Wrap(err, fmt.Sprintf("Can't add bias to non-activated output of Network's layer #%d", i))
-				}
-			} else {
-				layerNonActivated, err = gorgonia.BroadcastAdd(layerNonActivated, net.Layers[i].BiasNode, nil, []byte{0})
-				if err != nil {
-					return errors.Wrap(err, fmt.Sprintf("Can't add bias [in broadcast term with batch_size = %d] to non-activated output of Network's layer #%d", batchSize, i))
-				}
-			}
-		}
+		// Activate i-th layer's output (i != 0)
 		layerActivated, err := net.Layers[i].Activation(layerNonActivated)
 		if err != nil {
 			return errors.Wrap(err, fmt.Sprintf("Can't apply activation function to non-activated output of Network's layer #%d", i))
