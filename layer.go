@@ -15,13 +15,29 @@ type Layer struct {
 	Activation ActivationFunc
 	Type       LayerType
 
+	Options *Options
+}
+
+// Options Struct for holding options for certain activation functions.
+// LayerOptions Struct for holding options for different layers' types
+
+type Options struct {
+	// Used in layers: [Conv2D, Maxpool2D]
 	KernelHeight int
-	KernelWidth  int
-	Padding      []int
-	Stride       []int
-	Dilation     []int
-	ReshapeDims  []int
-	Probability  float64
+	// Used in layers: [Conv2D, Maxpool2D]
+	KernelWidth int
+	// Used in layers: [Conv2D, Maxpool2D]
+	Padding []int
+	// Used in layers: [Conv2D, Maxpool2D]
+	Stride []int
+	// Used in layers: [Conv2D, Maxpool2D]
+	Dilation []int
+	// Used in layers: [Reshape]
+	ReshapeDims []int
+	// Used in layers: [Dropout]
+	Probability float64
+	// Not used in layers directly. But used for defining parametetrs for certain activation functions (e.g. Softmax)
+	Axis []int
 }
 
 type LayerType uint16
@@ -91,13 +107,19 @@ func (layer *Layer) Fwd(input *gorgonia.Node, batchSize int) (*gorgonia.Node, er
 		}
 		break
 	case LayerConvolutional:
-		layerNonActivated, err = gorgonia.Conv2d(input, layer.WeightNode, tensor.Shape{layer.KernelHeight, layer.KernelWidth}, layer.Padding, layer.Stride, layer.Dilation)
+		if layer.Options == nil {
+			return nil, fmt.Errorf("Options haven't been provided for layer")
+		}
+		layerNonActivated, err = gorgonia.Conv2d(input, layer.WeightNode, tensor.Shape{layer.Options.KernelHeight, layer.Options.KernelWidth}, layer.Options.Padding, layer.Options.Stride, layer.Options.Dilation)
 		if err != nil {
 			return nil, errors.Wrap(err, "Can't convolve[2D] input by kernel of layer")
 		}
 		break
 	case LayerMaxpool:
-		layerNonActivated, err = gorgonia.MaxPool2D(input, tensor.Shape{layer.KernelHeight, layer.KernelWidth}, layer.Padding, layer.Stride)
+		if layer.Options == nil {
+			return nil, fmt.Errorf("Options haven't been provided for layer")
+		}
+		layerNonActivated, err = gorgonia.MaxPool2D(input, tensor.Shape{layer.Options.KernelHeight, layer.Options.KernelWidth}, layer.Options.Padding, layer.Options.Stride)
 		if err != nil {
 			return nil, errors.Wrap(err, "Can't maxpool[2D] input by kernel of layer")
 		}
@@ -109,18 +131,24 @@ func (layer *Layer) Fwd(input *gorgonia.Node, batchSize int) (*gorgonia.Node, er
 		}
 		break
 	case LayerReshape:
-		layerNonActivated, err = gorgonia.Reshape(input, layer.ReshapeDims)
+		if layer.Options == nil {
+			return nil, fmt.Errorf("Options haven't been provided for layer")
+		}
+		layerNonActivated, err = gorgonia.Reshape(input, layer.Options.ReshapeDims)
 		if err != nil {
 			return nil, errors.Wrap(err, "Can't reshape input of layer")
 		}
 		break
 	case LayerDropout:
+		if layer.Options == nil {
+			return nil, fmt.Errorf("Options haven't been provided for layer")
+		}
 		// Help developers to not provide NoActivation for dropout layer
 		layer.Activation = NoActivation
-		if ok := checkF64ValueInRange(layer.Probability, 0.0, 1.0); !ok {
-			return nil, fmt.Errorf("Dropout probability should lie in [0;1] for layer. Got %f", layer.Probability)
+		if ok := checkF64ValueInRange(layer.Options.Probability, 0.0, 1.0); !ok {
+			return nil, fmt.Errorf("Dropout probability should lie in [0;1] for layer. Got %f", layer.Options.Probability)
 		}
-		layerNonActivated, err = gorgonia.Dropout(input, layer.Probability)
+		layerNonActivated, err = gorgonia.Dropout(input, layer.Options.Probability)
 		if err != nil {
 			return nil, errors.Wrap(err, "Can't dilute input of layer")
 		}

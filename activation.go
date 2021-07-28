@@ -42,11 +42,6 @@ func Softmax(a *gorgonia.Node, opts ...Options) (*gorgonia.Node, error) {
 	return gorgonia.SoftMax(a)
 }
 
-// Options Struct for holding options for certain activation functions.
-type Options struct {
-	Axis []int
-}
-
 // WithActivationOptions Wrap function with custom options
 func WithActivationOptions(f ActivationFunc, opts ...Options) ActivationFunc {
 	newF := func(a *gorgonia.Node, opts_ignored ...Options) (*gorgonia.Node, error) {

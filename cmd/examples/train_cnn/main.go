@@ -280,27 +280,33 @@ func defineCNN(g *gorgonia.ExprGraph) *gan.DiscriminatorNet {
 	discriminator := gan.Discriminator(
 		[]*gan.Layer{
 			{
-				WeightNode:   dis_w0,
-				BiasNode:     nil,
-				Type:         gan.LayerConvolutional,
-				Activation:   gan.Rectify,
-				KernelHeight: 3,
-				KernelWidth:  3,
-				Padding:      []int{0, 0},
-				Stride:       []int{1, 1},
-				Dilation:     []int{1, 1},
+				WeightNode: dis_w0,
+				BiasNode:   nil,
+				Type:       gan.LayerConvolutional,
+				Activation: gan.Rectify,
+				Options: &gan.Options{
+					KernelHeight: 3,
+					KernelWidth:  3,
+					Padding:      []int{0, 0},
+					Stride:       []int{1, 1},
+					Dilation:     []int{1, 1},
+				},
 			},
 			{
-				Type:        gan.LayerDropout,
-				Probability: 0.3,
+				Type: gan.LayerDropout,
+				Options: &gan.Options{
+					Probability: 0.3,
+				},
 			},
 			{
-				Type:         gan.LayerMaxpool,
-				Activation:   gan.NoActivation,
-				KernelHeight: 2,
-				KernelWidth:  2,
-				Padding:      []int{0, 0},
-				Stride:       []int{2, 2},
+				Type:       gan.LayerMaxpool,
+				Activation: gan.NoActivation,
+				Options: &gan.Options{
+					KernelHeight: 2,
+					KernelWidth:  2,
+					Padding:      []int{0, 0},
+					Stride:       []int{2, 2},
+				},
 			},
 			{
 				Type:       gan.LayerFlatten,

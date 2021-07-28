@@ -38,14 +38,18 @@ func NewGAN(g *gorgonia.ExprGraph, definedGenerator *GeneratorNet, definedDiscri
 	// Discriminator part for GAN
 	for i, l := range definedDiscriminator.private.Layers {
 		definedGAN.modifiedDiscriminator.private.Layers[i] = &Layer{
-			Activation:   l.Activation,
-			Type:         l.Type,
-			KernelHeight: l.KernelHeight,
-			KernelWidth:  l.KernelWidth,
-			Padding:      l.Padding,
-			Stride:       l.Stride,
-			Dilation:     l.Dilation,
-			ReshapeDims:  l.ReshapeDims,
+			Activation: l.Activation,
+			Type:       l.Type,
+		}
+		if l.Options != nil {
+			definedGAN.modifiedDiscriminator.private.Layers[i].Options = &Options{
+				KernelHeight: l.Options.KernelHeight,
+				KernelWidth:  l.Options.KernelWidth,
+				Padding:      l.Options.Padding,
+				Stride:       l.Options.Stride,
+				Dilation:     l.Options.Dilation,
+				ReshapeDims:  l.Options.ReshapeDims,
+			}
 		}
 		if l.WeightNode == nil && !noWeightsAllowed(l.Type) {
 			return nil, fmt.Errorf("Discriminator's Layer %d has nil weight node", i)
