@@ -48,7 +48,7 @@ So, neural network structure would be:
         Number of input neurons: [**Max number of words in a sentence** x **Embedding dimensions**]. Number of output neurons: [**1** x **1**]
         
         No bias is required. 
-* How to represent text as numerical data? Well, [HashingTrick](utils.go#L313) and [PaddingInt64Slice](utils.go#L288) will help to do this task
+* How to represent text as numerical data? Well, [HashingTrick](../../utils.go#L313) and [PaddingInt64Slice](../../utils.go#L288) will help to do this task
 
 Final representation of network:
 input(1, 5) -> embedding(inputs=5, voc=50, dims=12) -> flatten(5,12) -> linear(inputs=60, outputs=1) -> sigmoid(1)
