@@ -128,6 +128,8 @@ func (layer *Layer) Fwd(input *gorgonia.Node, batchSize int) (*gorgonia.Node, er
 		}
 		break
 	case LayerFlatten:
+		// Help developers to not provide NoActivation for flatten layer
+		layer.Activation = NoActivation
 		layerNonActivated, err = gorgonia.Reshape(input, tensor.Shape{batchSize, input.Shape().TotalSize() / batchSize})
 		if err != nil {
 			return nil, errors.Wrap(err, "Can't flatten input of layer")
@@ -137,6 +139,8 @@ func (layer *Layer) Fwd(input *gorgonia.Node, batchSize int) (*gorgonia.Node, er
 		if layer.Options == nil {
 			return nil, fmt.Errorf("Options haven't been provided for layer")
 		}
+		// Help developers to not provide NoActivation for reshaping layer
+		layer.Activation = NoActivation
 		layerNonActivated, err = gorgonia.Reshape(input, layer.Options.ReshapeDims)
 		if err != nil {
 			return nil, errors.Wrap(err, "Can't reshape input of layer")
@@ -157,7 +161,7 @@ func (layer *Layer) Fwd(input *gorgonia.Node, batchSize int) (*gorgonia.Node, er
 		}
 		break
 	case LayerEmbedding:
-		if input.Type() != gorgonia.Int {
+		if input.Type().String() != "Vector int" {
 			return nil, fmt.Errorf("Layer is implemented for type 'Int' not for '%s'", input.Type().String())
 		}
 		inputLength := input.Shape().TotalSize()
@@ -169,6 +173,8 @@ func (layer *Layer) Fwd(input *gorgonia.Node, batchSize int) (*gorgonia.Node, er
 		if err != nil {
 			return nil, errors.Wrap(err, "Can't embedd input of layer [temporary]")
 		}
+		// Help developers to not provide NoActivation for embedding layer
+		layer.Activation = NoActivation
 		layerNonActivated, err = gorgonia.Reshape(tmpEmbedding, append(input.Shape(), layer.Options.EmbeddingSize))
 		if err != nil {
 			return nil, errors.Wrap(err, "Can't embedd input of layer")
