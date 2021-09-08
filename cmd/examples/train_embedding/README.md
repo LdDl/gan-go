@@ -31,7 +31,7 @@ standart approach - 0.5
 
 Restrictions:
 * Assume that vocabulary size is 50
-* Max amount of words in a text assesment 5
+* Max amount of words in a text assesment is 5
 
 So, neural network structure would be:
 * Input shape equals to {**1** x **Max number of words in a sentence**}. Max number of words is defined as "5"
@@ -55,7 +55,7 @@ input(1, 5) -> embedding(inputs=5, voc=50, dims=12) -> flatten(5,12) -> linear(i
 
 Assume that number of training epochs is 200, learning rate is 0.01, solver is Adam, batch size is 1
 
-Main code is in [main.go file](main.go). I guess it's pretty straightforward. But if it's not than I appreciate yours PR to improve this document
+Main code is in [main.go file](main.go). I guess it's pretty straightforward. But if it's not then I appreciate yours PR to improve this document
 
 Simply execute:
 ```shell
