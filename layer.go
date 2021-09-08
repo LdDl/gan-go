@@ -36,6 +36,8 @@ type Options struct {
 	ReshapeDims []int
 	// Used in layers: [Dropout]
 	Probability float64
+	// Used in layers: [Embedding]
+	EmbeddingSize int
 	// Not used in layers directly. But used for defining parametetrs for certain activation functions (e.g. Softmax)
 	Axis []int
 }
@@ -49,6 +51,7 @@ const (
 	LayerMaxpool
 	LayerReshape
 	LayerDropout
+	LayerEmbedding
 )
 
 var (
@@ -125,6 +128,8 @@ func (layer *Layer) Fwd(input *gorgonia.Node, batchSize int) (*gorgonia.Node, er
 		}
 		break
 	case LayerFlatten:
+		// Help developers to not provide NoActivation for flatten layer
+		layer.Activation = NoActivation
 		layerNonActivated, err = gorgonia.Reshape(input, tensor.Shape{batchSize, input.Shape().TotalSize() / batchSize})
 		if err != nil {
 			return nil, errors.Wrap(err, "Can't flatten input of layer")
@@ -134,6 +139,8 @@ func (layer *Layer) Fwd(input *gorgonia.Node, batchSize int) (*gorgonia.Node, er
 		if layer.Options == nil {
 			return nil, fmt.Errorf("Options haven't been provided for layer")
 		}
+		// Help developers to not provide NoActivation for reshaping layer
+		layer.Activation = NoActivation
 		layerNonActivated, err = gorgonia.Reshape(input, layer.Options.ReshapeDims)
 		if err != nil {
 			return nil, errors.Wrap(err, "Can't reshape input of layer")
@@ -153,6 +160,25 @@ func (layer *Layer) Fwd(input *gorgonia.Node, batchSize int) (*gorgonia.Node, er
 			return nil, errors.Wrap(err, "Can't dilute input of layer")
 		}
 		break
+	case LayerEmbedding:
+		if input.Type().String() != "Vector int" {
+			return nil, fmt.Errorf("Layer is implemented for type 'Int' not for '%s'", input.Type().String())
+		}
+		inputLength := input.Shape().TotalSize()
+		tmpFlatten, err := gorgonia.Reshape(input, tensor.Shape{inputLength})
+		if err != nil {
+			return nil, errors.Wrap(err, "Can't flatten input of layer [temporary]")
+		}
+		tmpEmbedding, err := gorgonia.ByIndices(layer.WeightNode, tmpFlatten, 0)
+		if err != nil {
+			return nil, errors.Wrap(err, "Can't embedd input of layer [temporary]")
+		}
+		// Help developers to not provide NoActivation for embedding layer
+		layer.Activation = NoActivation
+		layerNonActivated, err = gorgonia.Reshape(tmpEmbedding, append(input.Shape(), layer.Options.EmbeddingSize))
+		if err != nil {
+			return nil, errors.Wrap(err, "Can't embedd input of layer")
+		}
 	default:
 		return nil, fmt.Errorf("Layer's type '%d' (uint16) is not handled", layer.Type)
 	}

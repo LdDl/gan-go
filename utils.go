@@ -1,9 +1,18 @@
 package gan_go
 
 import (
+	"crypto/md5"
+	"crypto/sha256"
+	"crypto/sha512"
 	"fmt"
+	"hash/fnv"
 	"image/color"
+	"math/big"
 	"math/rand"
+	"sort"
+	"strings"
+
+	"regexp"
 
 	"github.com/pkg/errors"
 	"gonum.org/v1/plot"
@@ -231,4 +240,212 @@ func GenerateUniformTestSamples(vmGenerator, vmDiscriminator gorgonia.VM, inputG
 		}
 	}
 	return testSamplesTensor, nil
+}
+
+func OneHotEncode(sl []string) ([][]int, error) {
+	result := [][]int{}
+	unique := make(map[string]bool)
+	for _, s := range sl {
+		unique[s] = true
+	}
+	uniqueSlice := make([]string, 0, len(unique))
+	for k := range unique {
+		uniqueSlice = append(uniqueSlice, k)
+	}
+	sort.Strings(uniqueSlice)
+	maxIdx := len(uniqueSlice)
+	for i := range sl {
+		oneHotEncodedResult := make([]int, maxIdx)
+		oneHotIdx := findIdxStrings(sl[i], uniqueSlice)
+		if oneHotIdx == -1 {
+			return nil, fmt.Errorf("Index went to -1. This should not happen at all")
+		}
+		oneHotEncodedResult[oneHotIdx] = 1
+		result = append(result, oneHotEncodedResult)
+	}
+	return result, nil
+}
+
+func findIdxStrings(s string, slice []string) int {
+	for i, item := range slice {
+		if item == s {
+			return i
+		}
+	}
+	return -1
+}
+
+type PaddingSliceType int
+
+const (
+	PADDING_PRE = PaddingSliceType(iota)
+	PADDING_POST
+)
+
+// PaddingInt64Slice Append (or prepend) zero-based elements to slice until max length is reached.
+// If defined length is less or equal to length of provided slice then provided slice will be returned
+// Inspired by: https://www.tensorflow.org/api_docs/python/tf/keras/preprocessing/sequence/pad_sequences
+func PaddingInt64Slice(sl []int64, maxLen int, pt PaddingSliceType) []int64 {
+	if maxLen <= len(sl) {
+		return sl
+	}
+	newSL := make([]int64, maxLen-len(sl))
+	switch pt {
+	case PADDING_POST:
+		return append(sl, newSL...)
+	case PADDING_PRE:
+		return append(newSL, sl...)
+	default:
+		return sl
+	}
+}
+
+type HashType int
+
+const (
+	HASH_FNV32A = HashType(iota + 1)
+	HASH_FNV64A
+	HASH_SHA256
+	HASH_SHA512
+	HASH_MD5
+)
+
+func HashingTrick(sentence string, vocab int, ht HashType) ([]int64, error) {
+	// Split sentence into words
+	regexpStr := `[^\s!,.?":;0-9]+`
+	reg, err := regexp.Compile(`[^\s!,.?":;0-9]+`)
+	if err != nil {
+		return nil, errors.Wrap(err, fmt.Sprintf("Can't compile regexp string: '%s'", regexpStr))
+	}
+	strsRepresentation := reg.FindAllString(sentence, -1)
+	for i := range strsRepresentation {
+		strsRepresentation[i] = strings.ToLower(strsRepresentation[i])
+	}
+	// Apply hashing function
+	switch ht {
+	case HASH_FNV32A:
+		return HashingTrickFNV32A(strsRepresentation, vocab), nil
+	case HASH_FNV64A:
+		return HashingTrickFNV64A(strsRepresentation, vocab), nil
+	case HASH_SHA256:
+		return HashingTrickSHA256(strsRepresentation, vocab)
+	case HASH_SHA512:
+		return HashingTrickSHA512(strsRepresentation, vocab)
+	case HASH_MD5:
+		return HashingTrickMD5(strsRepresentation, vocab)
+	default:
+		return nil, fmt.Errorf("hash type of '%d' is not handled yet", ht)
+	}
+}
+
+func HashingTrickFNV32A(sentenceWords []string, vocab int) []int64 {
+	hashedList := make([]int, vocab)
+	ans := make([]int64, len(sentenceWords))
+	for i, word := range sentenceWords {
+		h := fnv.New32a()
+		h.Write([]byte(word))
+		hashed := h.Sum32()
+		hexInt := big.NewInt(int64(hashed))
+		bigVectorLength := big.NewInt(int64(vocab))
+		modulo := new(big.Int)
+		modulo = modulo.Mod(hexInt, bigVectorLength)
+		moduloInt64 := modulo.Int64()
+		hashedList[moduloInt64] += 1
+		if hashedList[moduloInt64] > 0 {
+			ans[i] = moduloInt64
+		}
+	}
+	return ans
+}
+
+func HashingTrickFNV64A(sentenceWords []string, vocab int) []int64 {
+	hashedList := make([]int, vocab)
+	ans := make([]int64, len(sentenceWords))
+	for i, word := range sentenceWords {
+		h := fnv.New64a()
+		h.Write([]byte(word))
+		hashed := h.Sum64()
+		hexInt := big.NewInt(int64(hashed))
+		bigVectorLength := big.NewInt(int64(vocab))
+		modulo := new(big.Int)
+		modulo = modulo.Mod(hexInt, bigVectorLength)
+		moduloInt64 := modulo.Int64()
+		hashedList[moduloInt64] += 1
+		if hashedList[moduloInt64] > 0 {
+			ans[i] = moduloInt64
+		}
+	}
+	return ans
+}
+
+func HashingTrickSHA256(sentenceWords []string, vocab int) ([]int64, error) {
+	hashedList := make([]int, vocab)
+	ans := make([]int64, len(sentenceWords))
+	for i, word := range sentenceWords {
+		hashedValue := sha256.New()
+		hashedValue.Write([]byte(word))
+		hexStr := fmt.Sprintf("%x", hashedValue.Sum(nil))
+		hexInt := new(big.Int)
+		hexInt, ok := hexInt.SetString(hexStr, 16)
+		if !ok {
+			return nil, fmt.Errorf("can't create big int from hex")
+		}
+		bigVectorLength := big.NewInt(int64(vocab))
+		modulo := new(big.Int)
+		modulo = modulo.Mod(hexInt, bigVectorLength)
+		moduloInt64 := modulo.Int64()
+		hashedList[moduloInt64] += 1
+		if hashedList[moduloInt64] > 0 {
+			ans[i] = moduloInt64
+		}
+	}
+	return ans, nil
+}
+
+func HashingTrickSHA512(sentenceWords []string, vocab int) ([]int64, error) {
+	hashedList := make([]int, vocab)
+	ans := make([]int64, len(sentenceWords))
+	for i, word := range sentenceWords {
+		hashedValue := sha512.New()
+		hashedValue.Write([]byte(word))
+		hexStr := fmt.Sprintf("%x", hashedValue.Sum(nil))
+		hexInt := new(big.Int)
+		hexInt, ok := hexInt.SetString(hexStr, 16)
+		if !ok {
+			return nil, fmt.Errorf("can't create big int from hex")
+		}
+		bigVectorLength := big.NewInt(int64(vocab))
+		modulo := new(big.Int)
+		modulo = modulo.Mod(hexInt, bigVectorLength)
+		moduloInt64 := modulo.Int64()
+		hashedList[moduloInt64] += 1
+		if hashedList[moduloInt64] > 0 {
+			ans[i] = moduloInt64
+		}
+	}
+	return ans, nil
+}
+
+func HashingTrickMD5(sentenceWords []string, vocab int) ([]int64, error) {
+	hashedList := make([]int, vocab)
+	ans := make([]int64, len(sentenceWords))
+	for i, word := range sentenceWords {
+		hashedValue := md5.New()
+		hashedValue.Write([]byte(word))
+		hexStr := fmt.Sprintf("%x", hashedValue.Sum(nil))
+		hexInt := new(big.Int)
+		hexInt, ok := hexInt.SetString(hexStr, 16)
+		if !ok {
+			return nil, fmt.Errorf("can't create big int from hex")
+		}
+		bigVectorLength := big.NewInt(int64(vocab))
+		modulo := new(big.Int)
+		modulo = modulo.Mod(hexInt, bigVectorLength)
+		moduloInt64 := modulo.Int64()
+		hashedList[moduloInt64] += 1
+		if hashedList[moduloInt64] > 0 {
+			ans[i] = moduloInt64
+		}
+	}
+	return ans, nil
 }
