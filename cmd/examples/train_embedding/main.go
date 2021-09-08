@@ -78,7 +78,7 @@ func main() {
 			Label:  []float64{BadPerfomance},
 		},
 		{
-			Value:  "average",
+			Value:  "average :(",
 			Hashed: []int{},
 			Label:  []float64{AveragePerfomance},
 		},
