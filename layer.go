@@ -52,6 +52,7 @@ const (
 	LayerReshape
 	LayerDropout
 	LayerEmbedding
+	LayerLSTM
 )
 
 var (
