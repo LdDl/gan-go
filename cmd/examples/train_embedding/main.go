@@ -125,7 +125,7 @@ func main() {
 	inputShape := tensor.Shape{maxPadding}
 	batchSize := 1
 	inputNet := gorgonia.NewTensor(netGraph, gorgonia.Int, 1, gorgonia.WithShape(inputShape...), gorgonia.WithName("discriminator_train_input"))
-	err := simpleNet.Fwd(inputNet, batchSize)
+	err := simpleNet.Fwd(batchSize, inputNet)
 	if err != nil {
 		panic(err)
 	}

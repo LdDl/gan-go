@@ -93,7 +93,7 @@ func (net *GAN) GeneratorLearnables() gorgonia.Nodes {
 // Note: input node is not needed since input for Discriminator is just Generator's output
 //
 func (net *GAN) Fwd(batchSize int) error {
-	if err := net.modifiedDiscriminator.Fwd(net.generatorPart.Out(), batchSize); err != nil {
+	if err := net.modifiedDiscriminator.Fwd(batchSize, net.generatorPart.Out()); err != nil {
 		return errors.Wrap(err, "[GAN, Discriminator part]")
 	}
 	net.out = net.modifiedDiscriminator.private.out
