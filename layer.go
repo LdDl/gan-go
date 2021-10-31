@@ -80,7 +80,7 @@ func checkF64ValueInRange(input, min, max float64) bool {
 
 // Fwd Initializates feedforward for provided input
 //
-// input - Input node
+// inputs - Input node (or nodes)
 // batchSize - batch size. If it's >= 2 then broadcast function will be applied
 //
 func (layer *Layer) Fwd(batchSize int, inputs ...*gorgonia.Node) (*gorgonia.Node, error) {
@@ -88,7 +88,7 @@ func (layer *Layer) Fwd(batchSize int, inputs ...*gorgonia.Node) (*gorgonia.Node
 	layerNonActivated := &gorgonia.Node{}
 
 	if len(inputs) == 0 {
-		return nil, fmt.Errorf("There are no input nodes")
+		return nil, fmt.Errorf("There are no input nodes for layer")
 	}
 
 	if layer.WeightNode == nil && !noWeightsAllowed(layer.Type) {
