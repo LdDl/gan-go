@@ -71,7 +71,7 @@ func main() {
 
 	/* Prepare tensor for input values */
 	inputCNN := gorgonia.NewTensor(cnnGraph, gorgonia.Float64, 4, gorgonia.WithShape(imgShape...), gorgonia.WithName("discriminator_train_input"))
-	err := simpleCNN.Fwd(inputCNN, batchSize)
+	err := simpleCNN.Fwd(batchSize, inputCNN)
 	if err != nil {
 		panic(err)
 	}
