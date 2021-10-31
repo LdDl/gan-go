@@ -41,11 +41,15 @@ func (net *Network) Learnables() gorgonia.Nodes {
 
 // Fwd Initializates feedforward for provided input
 //
-// input - Input node
+// inputs - Input node (or nodes)
 // batchSize - batch size. If it's >= 2 then broadcast function will be applied
 //
-func (net *Network) Fwd(input *gorgonia.Node, batchSize int) error {
+func (net *Network) Fwd(batchSize int, inputs ...*gorgonia.Node) error {
 	var err error
+
+	if len(inputs) == 0 {
+		return fmt.Errorf("There are no input nodes for network")
+	}
 
 	networkName := "network"
 	if net.Name != "" {
@@ -60,7 +64,7 @@ func (net *Network) Fwd(input *gorgonia.Node, batchSize int) error {
 	}
 
 	// Feedforward input through first layer
-	firstLayerNonActivated, err := net.Layers[0].Fwd(input, batchSize)
+	firstLayerNonActivated, err := net.Layers[0].Fwd(batchSize, inputs...)
 	if err != nil {
 		return errors.Wrap(err, "[Network, Layer #0] Can't feedforward input before activation")
 	}
@@ -86,7 +90,7 @@ func (net *Network) Fwd(input *gorgonia.Node, batchSize int) error {
 			return fmt.Errorf("Network's layer's #%d WeightNode is nil", i)
 		}
 		// Feedforward input through i-th layer (i != 0)
-		layerNonActivated, err := net.Layers[i].Fwd(lastActivatedLayer, batchSize)
+		layerNonActivated, err := net.Layers[i].Fwd(batchSize, lastActivatedLayer)
 		if err != nil {
 			return errors.Wrap(err, fmt.Sprintf("[Network, Layer #%d] Can't feedforward input before activation", i))
 		}

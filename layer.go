@@ -80,12 +80,16 @@ func checkF64ValueInRange(input, min, max float64) bool {
 
 // Fwd Initializates feedforward for provided input
 //
-// input - Input node
+// inputs - Input node (or nodes)
 // batchSize - batch size. If it's >= 2 then broadcast function will be applied
 //
-func (layer *Layer) Fwd(input *gorgonia.Node, batchSize int) (*gorgonia.Node, error) {
+func (layer *Layer) Fwd(batchSize int, inputs ...*gorgonia.Node) (*gorgonia.Node, error) {
 	var err error
 	layerNonActivated := &gorgonia.Node{}
+
+	if len(inputs) == 0 {
+		return nil, fmt.Errorf("There are no input nodes for layer")
+	}
 
 	if layer.WeightNode == nil && !noWeightsAllowed(layer.Type) {
 		return nil, fmt.Errorf("Layer's weights node is nil")
@@ -93,6 +97,10 @@ func (layer *Layer) Fwd(input *gorgonia.Node, batchSize int) (*gorgonia.Node, er
 
 	switch layer.Type {
 	case LayerLinear:
+		if len(inputs) > 1 {
+			return nil, fmt.Errorf("Layer's type '%d'can handle only 1 input node, got %d", layer.Type, len(inputs))
+		}
+		input := inputs[0]
 		tOp, err := gorgonia.Transpose(layer.WeightNode)
 		if err != nil {
 			return nil, errors.Wrap(err, "Can't transpose weights of layer")
@@ -110,6 +118,10 @@ func (layer *Layer) Fwd(input *gorgonia.Node, batchSize int) (*gorgonia.Node, er
 		}
 		break
 	case LayerConvolutional:
+		if len(inputs) > 1 {
+			return nil, fmt.Errorf("Layer's type '%d'can handle only 1 input node, got %d", layer.Type, len(inputs))
+		}
+		input := inputs[0]
 		if layer.Options == nil {
 			return nil, fmt.Errorf("Options haven't been provided for layer")
 		}
@@ -119,6 +131,10 @@ func (layer *Layer) Fwd(input *gorgonia.Node, batchSize int) (*gorgonia.Node, er
 		}
 		break
 	case LayerMaxpool:
+		if len(inputs) > 1 {
+			return nil, fmt.Errorf("Layer's type '%d'can handle only 1 input node, got %d", layer.Type, len(inputs))
+		}
+		input := inputs[0]
 		if layer.Options == nil {
 			return nil, fmt.Errorf("Options haven't been provided for layer")
 		}
@@ -128,6 +144,10 @@ func (layer *Layer) Fwd(input *gorgonia.Node, batchSize int) (*gorgonia.Node, er
 		}
 		break
 	case LayerFlatten:
+		if len(inputs) > 1 {
+			return nil, fmt.Errorf("Layer's type '%d'can handle only 1 input node, got %d", layer.Type, len(inputs))
+		}
+		input := inputs[0]
 		// Help developers to not provide NoActivation for flatten layer
 		layer.Activation = NoActivation
 		layerNonActivated, err = gorgonia.Reshape(input, tensor.Shape{batchSize, input.Shape().TotalSize() / batchSize})
@@ -136,9 +156,10 @@ func (layer *Layer) Fwd(input *gorgonia.Node, batchSize int) (*gorgonia.Node, er
 		}
 		break
 	case LayerReshape:
-		if layer.Options == nil {
-			return nil, fmt.Errorf("Options haven't been provided for layer")
+		if len(inputs) > 1 {
+			return nil, fmt.Errorf("Layer's type '%d'can handle only 1 input node, got %d", layer.Type, len(inputs))
 		}
+		input := inputs[0]
 		// Help developers to not provide NoActivation for reshaping layer
 		layer.Activation = NoActivation
 		layerNonActivated, err = gorgonia.Reshape(input, layer.Options.ReshapeDims)
@@ -147,9 +168,10 @@ func (layer *Layer) Fwd(input *gorgonia.Node, batchSize int) (*gorgonia.Node, er
 		}
 		break
 	case LayerDropout:
-		if layer.Options == nil {
-			return nil, fmt.Errorf("Options haven't been provided for layer")
+		if len(inputs) > 1 {
+			return nil, fmt.Errorf("Layer's type '%d'can handle only 1 input node, got %d", layer.Type, len(inputs))
 		}
+		input := inputs[0]
 		// Help developers to not provide NoActivation for dropout layer
 		layer.Activation = NoActivation
 		if ok := checkF64ValueInRange(layer.Options.Probability, 0.0, 1.0); !ok {
@@ -161,6 +183,10 @@ func (layer *Layer) Fwd(input *gorgonia.Node, batchSize int) (*gorgonia.Node, er
 		}
 		break
 	case LayerEmbedding:
+		if len(inputs) > 1 {
+			return nil, fmt.Errorf("Layer's type '%d'can handle only 1 input node, got %d", layer.Type, len(inputs))
+		}
+		input := inputs[0]
 		if input.Type().String() != "Vector int" {
 			return nil, fmt.Errorf("Layer is implemented for type 'Int' not for '%s'", input.Type().String())
 		}
