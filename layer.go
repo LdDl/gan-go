@@ -15,7 +15,10 @@ type Layer struct {
 	Activation ActivationFunc
 	Type       LayerType
 
-	Options *Options
+	outputNonActivatedNode *gorgonia.Node
+	outputActivatedNode    *gorgonia.Node
+	extraNodes             []*gorgonia.Node
+	Options                *Options
 }
 
 // Options Struct for holding options for certain activation functions.
@@ -117,7 +120,6 @@ func (layer *Layer) Fwd(batchSize int, inputs ...*gorgonia.Node) (*gorgonia.Node
 				return nil, errors.Wrap(err, fmt.Sprintf("Can't multiply input and weights of layer [batch_size = %d]", batchSize))
 			}
 		}
-		break
 	case LayerConvolutional:
 		if len(inputs) > 1 {
 			return nil, fmt.Errorf("Layer's type '%d'can handle only 1 input node, got %d", layer.Type, len(inputs))
@@ -130,7 +132,6 @@ func (layer *Layer) Fwd(batchSize int, inputs ...*gorgonia.Node) (*gorgonia.Node
 		if err != nil {
 			return nil, errors.Wrap(err, "Can't convolve[2D] input by kernel of layer")
 		}
-		break
 	case LayerMaxpool:
 		if len(inputs) > 1 {
 			return nil, fmt.Errorf("Layer's type '%d'can handle only 1 input node, got %d", layer.Type, len(inputs))
@@ -143,7 +144,6 @@ func (layer *Layer) Fwd(batchSize int, inputs ...*gorgonia.Node) (*gorgonia.Node
 		if err != nil {
 			return nil, errors.Wrap(err, "Can't maxpool[2D] input by kernel of layer")
 		}
-		break
 	case LayerFlatten:
 		if len(inputs) > 1 {
 			return nil, fmt.Errorf("Layer's type '%d'can handle only 1 input node, got %d", layer.Type, len(inputs))
@@ -155,7 +155,6 @@ func (layer *Layer) Fwd(batchSize int, inputs ...*gorgonia.Node) (*gorgonia.Node
 		if err != nil {
 			return nil, errors.Wrap(err, "Can't flatten input of layer")
 		}
-		break
 	case LayerReshape:
 		if len(inputs) > 1 {
 			return nil, fmt.Errorf("Layer's type '%d'can handle only 1 input node, got %d", layer.Type, len(inputs))
@@ -167,7 +166,6 @@ func (layer *Layer) Fwd(batchSize int, inputs ...*gorgonia.Node) (*gorgonia.Node
 		if err != nil {
 			return nil, errors.Wrap(err, "Can't reshape input of layer")
 		}
-		break
 	case LayerDropout:
 		if len(inputs) > 1 {
 			return nil, fmt.Errorf("Layer's type '%d'can handle only 1 input node, got %d", layer.Type, len(inputs))
@@ -182,7 +180,6 @@ func (layer *Layer) Fwd(batchSize int, inputs ...*gorgonia.Node) (*gorgonia.Node
 		if err != nil {
 			return nil, errors.Wrap(err, "Can't dilute input of layer")
 		}
-		break
 	case LayerEmbedding:
 		if len(inputs) > 1 {
 			return nil, fmt.Errorf("Layer's type '%d'can handle only 1 input node, got %d", layer.Type, len(inputs))
@@ -224,6 +221,6 @@ func (layer *Layer) Fwd(batchSize int, inputs ...*gorgonia.Node) (*gorgonia.Node
 			}
 		}
 	}
-
-	return layerNonActivated, nil
+	layer.outputNonActivatedNode = layerNonActivated
+	return layer.outputNonActivatedNode, nil
 }

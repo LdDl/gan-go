@@ -101,6 +101,7 @@ func (net *Network) Fwd(batchSize int, inputs ...*gorgonia.Node) error {
 			return errors.Wrap(err, fmt.Sprintf("Can't apply activation function to non-activated output of Network's layer #%d", i))
 		}
 		gorgonia.WithName(fmt.Sprintf("%s_activated_%d", networkName, i))(layerActivated)
+		net.Layers[i].outputActivatedNode = layerActivated
 		lastActivatedLayer = layerActivated
 		if i == len(net.Layers)-1 {
 			net.out = layerActivated
