@@ -97,7 +97,7 @@ func (layer *Layer) Fwd(batchSize int, inputs ...*gorgonia.Node) (*gorgonia.Node
 	if layer.WeightNode == nil && !noWeightsAllowed(layer.Type) {
 		return nil, fmt.Errorf("Layer's weights node is nil")
 	}
-
+// @todo: I guess it's better to have interfaces or personalized methods
 	switch layer.Type {
 	case LayerLinear:
 		if len(inputs) > 1 {
