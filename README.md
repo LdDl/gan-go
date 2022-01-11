@@ -34,6 +34,10 @@ Current examples folder contains limited set of layer types:
 - [ ] AvgPool
 - [x] Flatten
 - [x] Reshape
+- [x] Reshape
+- [x] Dropout
+- [x] Embedding
+- [ ] LSTM
 
 ## Why
 Just want to do that in Golang ecosystem.
