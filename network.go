@@ -34,6 +34,9 @@ func (net *Network) Learnables() gorgonia.Nodes {
 			if l.BiasNode != nil {
 				learnables = append(learnables, l.BiasNode)
 			}
+			if l.Type == LayerLSTM {
+				learnables = append(learnables, l.Options.LSTM.HiddenNode)
+			}
 		}
 	}
 	return learnables
