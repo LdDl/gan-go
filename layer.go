@@ -247,37 +247,30 @@ func (layer *Layer) Fwd(batchSize int, inputs ...*gorgonia.Node) (*gorgonia.Node
 		sequences := input.Shape()[0]
 		outputs := make([]*gorgonia.Node, sequences)
 		hiddenSize := layer.Options.LSTM.HiddenSize
-		if layer.BiasNode == nil {
-			// Extra help if bias node has't been provided
-			biasShape := tensor.Shape{1, 1, layer.Options.LSTM.HiddenSize * 4}
-			layer.BiasNode = gorgonia.NewTensor(input.Graph(), gorgonia.Float64, 3, gorgonia.WithShape(biasShape...), gorgonia.WithInit(gorgonia.Zeroes()))
-		}
 		for i := range outputs {
 			sequence, err := gorgonia.Slice(input, gorgonia.S(i), nil, nil)
 			if err != nil {
 				return nil, errors.Wrapf(err, "Can't slice layer's input of shape %v", input.Shape())
 			}
-			sequenceReshaped, err := gorgonia.Reshape(sequence, tensor.Shape{1, sequence.Shape()[0], sequence.Shape()[1]})
-			if err != nil {
-				return nil, errors.Wrapf(err, "Can't reshape sliced shape %v as %v", sequence.Shape(), tensor.Shape{1, sequence.Shape()[0], sequence.Shape()[1]})
-			}
-			sequenceApplyWeights, err := gorgonia.BatchedMatMul(sequenceReshaped, layer.WeightNode)
+			sequenceApplyWeights, err := gorgonia.BatchedMatMul(sequence, layer.WeightNode)
 			if err != nil {
 				return nil, errors.Wrap(err, "Can't call BatchedMatMul() for [Sequence ⋅ Weights]")
+			}
+			if previousHiddenState.Dims() == 3 {
+				previousHiddenState, err = gorgonia.Reshape(previousHiddenState, tensor.Shape{previousHiddenState.Shape()[1], previousHiddenState.Shape()[2]})
+				if err != nil {
+					return nil, errors.Wrap(err, "Can't call Reshape() for Previous Hidden State")
+				}
 			}
 			previousHiddenState, err = gorgonia.BatchedMatMul(previousHiddenState, layer.Options.LSTM.HiddenNode)
 			if err != nil {
 				return nil, errors.Wrap(err, "Can't call BatchedMatMul() for [Previous Hidden State ⋅ LSTM Hidden Node]")
 			}
-			allGates, err := gorgonia.Add(sequenceApplyWeights, previousHiddenState)
+			allGates, err := gorgonia.Add(previousHiddenState, sequenceApplyWeights)
 			if err != nil {
 				return nil, errors.Wrap(err, "Can't call Add() for [(Sequence ⋅ Weights) + Previous Hidden]")
 			}
-			gatesBiased, err := gorgonia.BroadcastAdd(allGates, layer.BiasNode, nil, []byte{0, 1})
-			if err != nil {
-				return nil, errors.Wrap(err, "Can't add biases to gates")
-			}
-			inputGate, err := gorgonia.Slice(gatesBiased, nil, nil, gorgonia.S(0, hiddenSize))
+			inputGate, err := gorgonia.Slice(allGates, nil, gorgonia.S(0, hiddenSize))
 			if err != nil {
 				return nil, errors.Wrap(err, "Can't slice gates to extract input gate")
 			}
@@ -285,7 +278,7 @@ func (layer *Layer) Fwd(batchSize int, inputs ...*gorgonia.Node) (*gorgonia.Node
 			if err != nil {
 				return nil, errors.Wrap(err, "Can't call ReccurentActivation() for input gate")
 			}
-			forgetGate, err := gorgonia.Slice(gatesBiased, nil, nil, gorgonia.S(hiddenSize, hiddenSize*2))
+			forgetGate, err := gorgonia.Slice(allGates, nil, gorgonia.S(hiddenSize, hiddenSize*2))
 			if err != nil {
 				return nil, errors.Wrap(err, "Can't slice gates to extract forget gate")
 			}
@@ -293,7 +286,7 @@ func (layer *Layer) Fwd(batchSize int, inputs ...*gorgonia.Node) (*gorgonia.Node
 			if err != nil {
 				return nil, errors.Wrap(err, "Can't call ReccurentActivation() for forget gate")
 			}
-			cellGate, err := gorgonia.Slice(gatesBiased, nil, nil, gorgonia.S(hiddenSize*2, hiddenSize*3))
+			cellGate, err := gorgonia.Slice(allGates, nil, gorgonia.S(hiddenSize*2, hiddenSize*3))
 			if err != nil {
 				return nil, errors.Wrap(err, "Can't slice gates to extract cell gate")
 			}
@@ -301,7 +294,7 @@ func (layer *Layer) Fwd(batchSize int, inputs ...*gorgonia.Node) (*gorgonia.Node
 			if err != nil {
 				return nil, errors.Wrap(err, "Can't call Activation() for cell gate")
 			}
-			outputGate, err := gorgonia.Slice(gatesBiased, nil, nil, gorgonia.S(hiddenSize*3, hiddenSize*4))
+			outputGate, err := gorgonia.Slice(allGates, nil, gorgonia.S(hiddenSize*3, hiddenSize*4))
 			if err != nil {
 				return nil, errors.Wrap(err, "Can't slice gates to extract output gate")
 			}
@@ -309,13 +302,19 @@ func (layer *Layer) Fwd(batchSize int, inputs ...*gorgonia.Node) (*gorgonia.Node
 			if err != nil {
 				return nil, errors.Wrap(err, "Can't call ReccurentActivation() for output gate")
 			}
-			preserved, err := gorgonia.BroadcastHadamardProd(forgetGateActivated, previousCellState, nil, []byte{0})
-			if err != nil {
-				return nil, errors.Wrap(err, "Can't call BroadcastHadamardProd() for [Forget gate ⊙ Previous cell]")
+			if previousCellState.Dims() == 3 {
+				previousCellState, err = gorgonia.Reshape(previousCellState, tensor.Shape{previousCellState.Shape()[1], previousCellState.Shape()[2]})
+				if err != nil {
+					return nil, errors.Wrap(err, "Can't call Reshape() for Previous Cell State")
+				}
 			}
-			addInfo, err := gorgonia.BroadcastHadamardProd(inputGateActivated, cellGateActivated, nil, []byte{0})
+			preserved, err := gorgonia.HadamardProd(forgetGateActivated, previousCellState)
 			if err != nil {
-				return nil, errors.Wrap(err, "Can't call BroadcastHadamardProd() for [Input gate ⊙ Cell gate]")
+				return nil, errors.Wrap(err, "Can't call HadamardProd() for [Forget gate ⊙ Previous cell]")
+			}
+			addInfo, err := gorgonia.HadamardProd(inputGateActivated, cellGateActivated)
+			if err != nil {
+				return nil, errors.Wrap(err, "Can't call HadamardProd() for [Input gate ⊙ Cell gate]")
 			}
 			previousCellState, err = gorgonia.Add(preserved, addInfo)
 			if err != nil {
@@ -325,11 +324,18 @@ func (layer *Layer) Fwd(batchSize int, inputs ...*gorgonia.Node) (*gorgonia.Node
 			if err != nil {
 				return nil, errors.Wrap(err, "Can't apply Activation (tanh) to cell")
 			}
-			previousHiddenState, err = gorgonia.BroadcastHadamardProd(outputGateActivated, cellActivated, nil, []byte{0})
+			previousHiddenState, err = gorgonia.HadamardProd(outputGateActivated, cellActivated)
 			if err != nil {
-				return nil, errors.Wrap(err, "Can't call BroadcastHadamardProd() for [Output gate ⊙ Activated cell]")
+				return nil, errors.Wrap(err, "Can't call HadamardProd() for [Output gate ⊙ Activated cell]")
 			}
-			outputs[i] = previousHiddenState
+			var reshapedPreviousHiddenState *gorgonia.Node
+			if input.Dims() == 3 {
+				reshapedPreviousHiddenState, err = gorgonia.Reshape(previousHiddenState, tensor.Shape{1, previousHiddenState.Shape()[0], previousHiddenState.Shape()[1]})
+				if err != nil {
+					return nil, errors.Wrap(err, "Can't call Reshape() for Previous Hidden State")
+				}
+			}
+			outputs[i] = reshapedPreviousHiddenState
 		}
 		layerNonActivated, err = gorgonia.Concat(0, outputs...)
 		if err != nil {
