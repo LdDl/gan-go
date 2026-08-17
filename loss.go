@@ -8,6 +8,29 @@ import (
 	"gorgonia.org/tensor"
 )
 
+// epsilonFor Returns small constant matching dtype of provided node
+func epsilonFor(a *gorgonia.Node) interface{} {
+	switch a.Dtype() {
+	case tensor.Float32:
+		return float32(1e-7)
+	default:
+		return float64(1e-12)
+	}
+}
+
+// stableLog Computes log(A+eps) instead of log(A), so saturated activation (A equals to 0.0 exactly)
+// does not produce infinite loss and NaN gradients. Gradient is bounded by 1/eps as well.
+// Note: node holding epsilon value must be named uniquely in scope of graph,
+// since Gorgonia hashes input nodes by type, shape and name only. See notes for HuberLoss
+func stableLog(a *gorgonia.Node, epsNodeName string) (*gorgonia.Node, error) {
+	epsScalar := gorgonia.NewScalar(a.Graph(), a.Dtype(), gorgonia.WithValue(epsilonFor(a)), gorgonia.WithName(epsNodeName))
+	shifted, err := gorgonia.Add(a, epsScalar)
+	if err != nil {
+		return nil, errors.Wrap(err, "Can't do (A+eps)")
+	}
+	return gorgonia.Log(shifted)
+}
+
 type LossReduction uint16
 
 const (
@@ -41,9 +64,10 @@ func MSELoss(a, b *gorgonia.Node, reduction ...LossReduction) (*gorgonia.Node, e
 }
 
 // CrossEntropyLoss See ref. https://en.wikipedia.org/wiki/Cross_entropy#Cross-entropy_loss_function_and_logistic_regression
+// Logarithm argument is shifted by small epsilon to prevent infinite loss values
 // Default reduction is 'mean'
 func CrossEntropyLoss(a, b *gorgonia.Node, reduction ...LossReduction) (*gorgonia.Node, error) {
-	log, err := gorgonia.Log(a)
+	log, err := stableLog(a, fmt.Sprintf("ce_eps_%d_%d", a.ID(), b.ID()))
 	if err != nil {
 		return nil, errors.Wrap(err, "Can't do log(A)")
 	}
@@ -72,10 +96,11 @@ func CrossEntropyLoss(a, b *gorgonia.Node, reduction ...LossReduction) (*gorgoni
 // BinaryCrossEntropyLoss See ref. https://en.wikipedia.org/wiki/Cross_entropy#Cross-entropy_loss_function_and_logistic_regression
 // Pretty the same as CrossEntropyLoss. BUT for C=2, where C - number of classes
 // In case of binary variation of cross entropy loss: sample could belong to 0 or 1 only.
+// Logarithm arguments are shifted by small epsilon to prevent infinite loss values
 // Default reduction is 'mean'
 func BinaryCrossEntropyLoss(a, b *gorgonia.Node, reduction ...LossReduction) (*gorgonia.Node, error) {
 	// Main part the same as cross entropy
-	logMain, err := gorgonia.Log(a)
+	logMain, err := stableLog(a, fmt.Sprintf("bce_main_eps_%d_%d", a.ID(), b.ID()))
 	if err != nil {
 		return nil, errors.Wrap(err, "Can't do log(A)")
 	}
@@ -98,7 +123,7 @@ func BinaryCrossEntropyLoss(a, b *gorgonia.Node, reduction ...LossReduction) (*g
 	if err != nil {
 		return nil, errors.Wrap(err, "Can't do (1-A)")
 	}
-	logBin, err := gorgonia.Log(oneSubA)
+	logBin, err := stableLog(oneSubA, fmt.Sprintf("bce_bin_eps_%d_%d", a.ID(), b.ID()))
 	if err != nil {
 		return nil, errors.Wrap(err, "Can't do log(1-A)")
 	}
