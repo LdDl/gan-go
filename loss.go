@@ -5,6 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 	"gorgonia.org/gorgonia"
+	"gorgonia.org/tensor"
 )
 
 type LossReduction uint16
@@ -89,8 +90,15 @@ func BinaryCrossEntropyLoss(a, b *gorgonia.Node, reduction ...LossReduction) (*g
 	}
 
 	// Here comes another part
-	onesTensor := gorgonia.NewTensor(a.Graph(), a.Dtype(), a.Dims(), gorgonia.WithShape(a.Shape()...), gorgonia.WithInit(gorgonia.Ones()))
-	logBin, err := gorgonia.Sub(onesTensor, a)
+	// Note: the tensor is named uniquely on purpose. Gorgonia hashes input nodes by
+	// (type + shape + name) only, so an unnamed tensor could be deduplicated with
+	// another same-shaped unnamed node of the graph. See also comment in HuberLoss.
+	onesTensor := gorgonia.NewTensor(a.Graph(), a.Dtype(), a.Dims(), gorgonia.WithShape(a.Shape()...), gorgonia.WithInit(gorgonia.Ones()), gorgonia.WithName(fmt.Sprintf("bce_ones_%d_%d", a.ID(), b.ID())))
+	oneSubA, err := gorgonia.Sub(onesTensor, a)
+	if err != nil {
+		return nil, errors.Wrap(err, "Can't do (1-A)")
+	}
+	logBin, err := gorgonia.Log(oneSubA)
 	if err != nil {
 		return nil, errors.Wrap(err, "Can't do log(1-A)")
 	}
@@ -157,9 +165,23 @@ func L1Loss(a, b *gorgonia.Node, reduction ...LossReduction) (*gorgonia.Node, er
 // Delta value type should match Dtype of provided nodes. tensor.Float32 -> float32, tensor.Float64 -> float64 and etc.
 // Default reduction is 'mean'
 func HuberLoss(a, b *gorgonia.Node, delta interface{}, reduction ...LossReduction) (*gorgonia.Node, error) {
-	deltaScalar := gorgonia.NewScalar(a.Graph(), a.Dtype(), gorgonia.WithValue(delta))
-	sqrDelta := gorgonia.NewScalar(a.Graph(), a.Dtype(), gorgonia.WithValue(delta))
-	oneScalar := gorgonia.NewScalar(a.Graph(), a.Dtype(), gorgonia.WithValue(1.0))
+	// Important: value (input) nodes MUST be named uniquely here.
+	// Gorgonia hashes input nodes by (type + shape + name) only — the value is NOT part of the hash.
+	// Two unnamed scalars of the same dtype would be deduplicated into a single node by the graph,
+	// silently replacing e.g. the constant 1.0 with the value of delta.
+	deltaScalar := gorgonia.NewScalar(a.Graph(), a.Dtype(), gorgonia.WithValue(delta), gorgonia.WithName(fmt.Sprintf("huber_delta_%d_%d", a.ID(), b.ID())))
+	sqrDelta, err := gorgonia.Square(deltaScalar)
+	if err != nil {
+		return nil, errors.Wrap(err, "Can't do (delta^2)")
+	}
+	var one interface{}
+	switch a.Dtype() {
+	case tensor.Float32:
+		one = float32(1.0)
+	default:
+		one = float64(1.0)
+	}
+	oneScalar := gorgonia.NewScalar(a.Graph(), a.Dtype(), gorgonia.WithValue(one), gorgonia.WithName(fmt.Sprintf("huber_one_%d_%d", a.ID(), b.ID())))
 
 	sub, err := gorgonia.Sub(a, b)
 	if err != nil {
