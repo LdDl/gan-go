@@ -9,13 +9,12 @@ import (
 //
 // Layers - simple sequence of layers
 // out - alias to activated output of last layer
-//
 type DiscriminatorNet struct {
 	private *Network
 }
 
 // Discriminator Constructor for DiscriminatorNet
-func Discriminator(Layers ...*Layer) *DiscriminatorNet {
+func Discriminator(Layers ...Layer) *DiscriminatorNet {
 	return &DiscriminatorNet{private: &Network{
 		Name:   "discriminator",
 		Layers: Layers,
@@ -36,7 +35,6 @@ func (net *DiscriminatorNet) Learnables() gorgonia.Nodes {
 //
 // input - Input node (or nodes)
 // batchSize - batch size. If it's >= 2 then broadcast function will be applied
-//
 func (net *DiscriminatorNet) Fwd(batchSize int, inputs ...*gorgonia.Node) error {
 	if err := net.private.Fwd(batchSize, inputs...); err != nil {
 		return errors.Wrap(err, "[Discriminator]")

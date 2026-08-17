@@ -233,25 +233,15 @@ func defineNet(g *gorgonia.ExprGraph, vocabulary, maxWords, embeddingDim int) *g
 	dis_shp1 := tensor.Shape{1, maxWords * embeddingDim}
 	dis_w1 := gorgonia.NewMatrix(g, gorgonia.Float64, gorgonia.WithShape(dis_shp1...), gorgonia.WithName("discriminator_train_w1"), gorgonia.WithInit(gorgonia.GlorotN(1.0)))
 	discriminator := gan.Discriminator(
-		[]*gan.Layer{
-			{
-				WeightNode: dis_w0,
-				BiasNode:   nil,
-				Type:       gan.LayerEmbedding,
-				Options: &gan.Options{
-					EmbeddingSize: embeddingDim,
-				},
-			},
-			{
-				Type: gan.LayerFlatten,
-			},
-			{
-				WeightNode: dis_w1,
-				BiasNode:   nil,
-				Type:       gan.LayerLinear,
-				Activation: gan.Sigmoid,
-			},
-		}...,
+		&gan.EmbeddingLayer{
+			WeightNode:    dis_w0,
+			EmbeddingSize: embeddingDim,
+		},
+		&gan.FlattenLayer{},
+		&gan.LinearLayer{
+			WeightNode: dis_w1,
+			Activation: gan.Sigmoid,
+		},
 	)
 	return discriminator
 }

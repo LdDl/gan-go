@@ -357,41 +357,26 @@ func defineDiscriminator(g *gorgonia.ExprGraph) *gan.DiscriminatorNet {
 	dis_shp1 := tensor.Shape{1, 12 * 4 * 3}
 	dis_w1 := gorgonia.NewMatrix(g, gorgonia.Float64, gorgonia.WithShape(dis_shp1...), gorgonia.WithName("discriminator_train_w1"), gorgonia.WithInit(gorgonia.GlorotN(1.0)))
 	discriminator := gan.Discriminator(
-		[]*gan.Layer{
-			{
-				WeightNode: dis_w0,
-				BiasNode:   nil,
-				Type:       gan.LayerConvolutional,
-				Activation: gan.Rectify,
-				Options: &gan.Options{
-					KernelHeight: 3,
-					KernelWidth:  3,
-					Padding:      []int{0, 0},
-					Stride:       []int{1, 1},
-					Dilation:     []int{1, 1},
-				},
-			},
-			{
-				Type:       gan.LayerMaxpool,
-				Activation: gan.NoActivation,
-				Options: &gan.Options{
-					KernelHeight: 2,
-					KernelWidth:  2,
-					Padding:      []int{0, 0},
-					Stride:       []int{2, 2},
-				},
-			},
-			{
-				Type:       gan.LayerFlatten,
-				Activation: gan.NoActivation,
-			},
-			{
-				WeightNode: dis_w1,
-				BiasNode:   nil,
-				Type:       gan.LayerLinear,
-				Activation: gan.Sigmoid,
-			},
-		}...,
+		&gan.Conv2DLayer{
+			WeightNode:   dis_w0,
+			Activation:   gan.Rectify,
+			KernelHeight: 3,
+			KernelWidth:  3,
+			Padding:      []int{0, 0},
+			Stride:       []int{1, 1},
+			Dilation:     []int{1, 1},
+		},
+		&gan.MaxpoolLayer{
+			KernelHeight: 2,
+			KernelWidth:  2,
+			Padding:      []int{0, 0},
+			Stride:       []int{2, 2},
+		},
+		&gan.FlattenLayer{},
+		&gan.LinearLayer{
+			WeightNode: dis_w1,
+			Activation: gan.Sigmoid,
+		},
 	)
 	return discriminator
 }
@@ -425,147 +410,90 @@ func defineGenerator(g *gorgonia.ExprGraph) *gan.GeneratorNet {
 	gen_w5 := gorgonia.NewMatrix(g, gorgonia.Float64, gorgonia.WithShape(gen_shp5...), gorgonia.WithName("generator_w6"), gorgonia.WithInit(gorgonia.GlorotN(1.0)))
 
 	generator := gan.Generator(
-		[]*gan.Layer{
-			{
-				WeightNode: gen_w0,
-				BiasNode:   nil,
-				Type:       gan.LayerConvolutional,
-				Activation: gan.Rectify,
-				Options: &gan.Options{
-					KernelHeight: 3,
-					KernelWidth:  3,
-					Padding:      []int{0, 0},
-					Stride:       []int{1, 1},
-					Dilation:     []int{1, 1},
-				},
-			},
-			{
-				Type: gan.LayerDropout,
-				Options: &gan.Options{
-					Probability: 0.6,
-				},
-			},
-			{
-				Type:       gan.LayerMaxpool,
-				Activation: gan.NoActivation,
-				Options: &gan.Options{
-					KernelHeight: 2,
-					KernelWidth:  2,
-					Padding:      []int{0, 0},
-					Stride:       []int{2, 2},
-				},
-			},
-			{
-				WeightNode: gen_w1,
-				BiasNode:   nil,
-				Type:       gan.LayerConvolutional,
-				Activation: gan.Rectify,
-				Options: &gan.Options{
-					KernelHeight: 3,
-					KernelWidth:  3,
-					Padding:      []int{0, 0},
-					Stride:       []int{1, 1},
-					Dilation:     []int{1, 1},
-				},
-			},
-			{
-				Type: gan.LayerDropout,
-				Options: &gan.Options{
-					Probability: 0.5,
-				},
-			},
-			{
-				Type:       gan.LayerMaxpool,
-				Activation: gan.NoActivation,
-				Options: &gan.Options{
-					KernelHeight: 2,
-					KernelWidth:  2,
-					Padding:      []int{0, 0},
-					Stride:       []int{2, 2},
-				},
-			},
-			{
-				WeightNode: gen_w2,
-				BiasNode:   nil,
-				Type:       gan.LayerConvolutional,
-				Activation: gan.Rectify,
-				Options: &gan.Options{
-					KernelHeight: 3,
-					KernelWidth:  3,
-					Padding:      []int{0, 0},
-					Stride:       []int{1, 1},
-					Dilation:     []int{1, 1},
-				},
-			},
-			{
-				Type: gan.LayerDropout,
-				Options: &gan.Options{
-					Probability: 0.2,
-				},
-			},
-			{
-				Type:       gan.LayerMaxpool,
-				Activation: gan.NoActivation,
-				Options: &gan.Options{
-					KernelHeight: 2,
-					KernelWidth:  2,
-					Padding:      []int{0, 0},
-					Stride:       []int{2, 2},
-				},
-			},
-			{
-				WeightNode: gen_w3,
-				BiasNode:   nil,
-				Type:       gan.LayerConvolutional,
-				Activation: gan.Rectify,
-				Options: &gan.Options{
-					KernelHeight: 3,
-					KernelWidth:  3,
-					Padding:      []int{0, 0},
-					Stride:       []int{1, 1},
-					Dilation:     []int{1, 1},
-				},
-			},
-			{
-				Type: gan.LayerDropout,
-				Options: &gan.Options{
-					Probability: 0.2,
-				},
-			},
-			{
-				Type:       gan.LayerMaxpool,
-				Activation: gan.NoActivation,
-				Options: &gan.Options{
-					KernelHeight: 2,
-					KernelWidth:  2,
-					Padding:      []int{0, 0},
-					Stride:       []int{2, 2},
-				},
-			},
-			{
-				Type:       gan.LayerFlatten,
-				Activation: gan.NoActivation,
-			},
-			{
-				WeightNode: gen_w4,
-				BiasNode:   nil,
-				Type:       gan.LayerLinear,
-				Activation: gan.Sigmoid,
-			},
-			{
-				WeightNode: gen_w5,
-				BiasNode:   nil,
-				Type:       gan.LayerLinear,
-				Activation: gan.Sigmoid,
-			},
-			{
-				Type:       gan.LayerReshape,
-				Activation: gan.NoActivation,
-				Options: &gan.Options{
-					ReshapeDims: []int{1, 1, imgHeight, imgWidth},
-				},
-			},
-		}...,
+		&gan.Conv2DLayer{
+			WeightNode:   gen_w0,
+			Activation:   gan.Rectify,
+			KernelHeight: 3,
+			KernelWidth:  3,
+			Padding:      []int{0, 0},
+			Stride:       []int{1, 1},
+			Dilation:     []int{1, 1},
+		},
+		&gan.DropoutLayer{
+			Probability: 0.6,
+		},
+		&gan.MaxpoolLayer{
+			KernelHeight: 2,
+			KernelWidth:  2,
+			Padding:      []int{0, 0},
+			Stride:       []int{2, 2},
+		},
+		&gan.Conv2DLayer{
+			WeightNode:   gen_w1,
+			Activation:   gan.Rectify,
+			KernelHeight: 3,
+			KernelWidth:  3,
+			Padding:      []int{0, 0},
+			Stride:       []int{1, 1},
+			Dilation:     []int{1, 1},
+		},
+		&gan.DropoutLayer{
+			Probability: 0.5,
+		},
+		&gan.MaxpoolLayer{
+			KernelHeight: 2,
+			KernelWidth:  2,
+			Padding:      []int{0, 0},
+			Stride:       []int{2, 2},
+		},
+		&gan.Conv2DLayer{
+			WeightNode:   gen_w2,
+			Activation:   gan.Rectify,
+			KernelHeight: 3,
+			KernelWidth:  3,
+			Padding:      []int{0, 0},
+			Stride:       []int{1, 1},
+			Dilation:     []int{1, 1},
+		},
+		&gan.DropoutLayer{
+			Probability: 0.2,
+		},
+		&gan.MaxpoolLayer{
+			KernelHeight: 2,
+			KernelWidth:  2,
+			Padding:      []int{0, 0},
+			Stride:       []int{2, 2},
+		},
+		&gan.Conv2DLayer{
+			WeightNode:   gen_w3,
+			Activation:   gan.Rectify,
+			KernelHeight: 3,
+			KernelWidth:  3,
+			Padding:      []int{0, 0},
+			Stride:       []int{1, 1},
+			Dilation:     []int{1, 1},
+		},
+		&gan.DropoutLayer{
+			Probability: 0.2,
+		},
+		&gan.MaxpoolLayer{
+			KernelHeight: 2,
+			KernelWidth:  2,
+			Padding:      []int{0, 0},
+			Stride:       []int{2, 2},
+		},
+		&gan.FlattenLayer{},
+		&gan.LinearLayer{
+			WeightNode: gen_w4,
+			Activation: gan.Sigmoid,
+		},
+		&gan.LinearLayer{
+			WeightNode: gen_w5,
+			Activation: gan.Sigmoid,
+		},
+		&gan.ReshapeLayer{
+			Dims: []int{1, 1, imgHeight, imgWidth},
+		},
 	)
 	return generator
 }

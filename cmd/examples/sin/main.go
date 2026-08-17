@@ -320,37 +320,31 @@ func defineDiscriminator(g *gorgonia.ExprGraph) *gan.DiscriminatorNet {
 	dis_w5 := gorgonia.NewMatrix(g, gorgonia.Float64, gorgonia.WithShape(dis_shp5...), gorgonia.WithName("discriminator_train_w5"), gorgonia.WithInit(gorgonia.GlorotN(1.0)))
 
 	discriminator := gan.Discriminator(
-		[]*gan.Layer{
-			{
-				WeightNode: dis_w0,
-				BiasNode:   dis_b0,
-				Type:       gan.LayerLinear,
-				Activation: gan.Rectify,
-			},
-			{
-				WeightNode: dis_w1,
-				BiasNode:   dis_b1,
-				Type:       gan.LayerLinear,
-				Activation: gan.Rectify,
-			},
-			{
-				WeightNode: dis_w2,
-				BiasNode:   dis_b2,
-				Type:       gan.LayerLinear,
-				Activation: gan.Rectify,
-			},
-			{
-				WeightNode: dis_w3,
-				BiasNode:   dis_b3,
-				Type:       gan.LayerLinear,
-				Activation: gan.Rectify,
-			},
-			{
-				WeightNode: dis_w5,
-				BiasNode:   dis_b5,
-				Activation: gan.Sigmoid,
-			},
-		}...,
+		&gan.LinearLayer{
+			WeightNode: dis_w0,
+			BiasNode:   dis_b0,
+			Activation: gan.Rectify,
+		},
+		&gan.LinearLayer{
+			WeightNode: dis_w1,
+			BiasNode:   dis_b1,
+			Activation: gan.Rectify,
+		},
+		&gan.LinearLayer{
+			WeightNode: dis_w2,
+			BiasNode:   dis_b2,
+			Activation: gan.Rectify,
+		},
+		&gan.LinearLayer{
+			WeightNode: dis_w3,
+			BiasNode:   dis_b3,
+			Activation: gan.Rectify,
+		},
+		&gan.LinearLayer{
+			WeightNode: dis_w5,
+			BiasNode:   dis_b5,
+			Activation: gan.Sigmoid,
+		},
 	)
 	return discriminator
 }
@@ -373,32 +367,26 @@ func defineGenerator(g *gorgonia.ExprGraph) *gan.GeneratorNet {
 	gen_w3 := gorgonia.NewMatrix(g, gorgonia.Float64, gorgonia.WithShape(gen_shp3...), gorgonia.WithName("generator_w3"), gorgonia.WithInit(gorgonia.GlorotN(1.0)))
 
 	generator := gan.Generator(
-		[]*gan.Layer{
-			{
-				WeightNode: gen_w0,
-				BiasNode:   gen_b0,
-				Type:       gan.LayerLinear,
-				Activation: gan.Rectify,
-			},
-			{
-				WeightNode: gen_w1,
-				BiasNode:   gen_b1,
-				Type:       gan.LayerLinear,
-				Activation: gan.Rectify,
-			},
-			{
-				WeightNode: gen_w2,
-				BiasNode:   gen_b2,
-				Type:       gan.LayerLinear,
-				Activation: gan.Rectify,
-			},
-			{
-				WeightNode: gen_w3,
-				BiasNode:   gen_b3,
-				Type:       gan.LayerLinear,
-				Activation: gan.NoActivation,
-			},
-		}...,
+		&gan.LinearLayer{
+			WeightNode: gen_w0,
+			BiasNode:   gen_b0,
+			Activation: gan.Rectify,
+		},
+		&gan.LinearLayer{
+			WeightNode: gen_w1,
+			BiasNode:   gen_b1,
+			Activation: gan.Rectify,
+		},
+		&gan.LinearLayer{
+			WeightNode: gen_w2,
+			BiasNode:   gen_b2,
+			Activation: gan.Rectify,
+		},
+		&gan.LinearLayer{
+			WeightNode: gen_w3,
+			BiasNode:   gen_b3,
+			Activation: gan.NoActivation,
+		},
 	)
 	return generator
 }

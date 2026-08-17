@@ -9,13 +9,12 @@ import (
 //
 // Layers - simple sequence of layers
 // out - alias to activated output of last layer
-//
 type GeneratorNet struct {
 	private *Network
 }
 
 // Generator Constructor for GeneratorNet
-func Generator(Layers ...*Layer) *GeneratorNet {
+func Generator(Layers ...Layer) *GeneratorNet {
 	return &GeneratorNet{private: &Network{
 		Name:   "generator",
 		Layers: Layers,
@@ -36,7 +35,6 @@ func (net *GeneratorNet) Learnables() gorgonia.Nodes {
 //
 // input - Input node (or nodes)
 // batchSize - batch size. If it's >= 2 then broadcast function will be applied
-//
 func (net *GeneratorNet) Fwd(batchSize int, inputs ...*gorgonia.Node) error {
 	if err := net.private.Fwd(batchSize, inputs...); err != nil {
 		return errors.Wrap(err, "[Generator]")
