@@ -4,6 +4,11 @@ import (
 	"gorgonia.org/gorgonia"
 )
 
+// Options Struct for holding parameters for certain activation functions (e.g. axis for Softmax)
+type Options struct {
+	Axis []int
+}
+
 // ActivationFunc Just an alias to Gorgonia'a api_gen.go - https://github.com/gorgonia/gorgonia/blob/master/api_gen.go#L1
 type ActivationFunc func(a *gorgonia.Node, opts ...Options) (*gorgonia.Node, error)
 

@@ -27,7 +27,6 @@ import (
 // batchSize - Simply batch size
 // n - Number of elements in each batch
 // Resulting dense will have batchSize*n elements
-//
 func NormRandDense(batchSize, n int) *tensor.Dense {
 	data := make([]float64, batchSize*n)
 	for i := range data {
@@ -41,7 +40,6 @@ func NormRandDense(batchSize, n int) *tensor.Dense {
 // batchSize - Simply batch size
 // n - Number of elements in each batch
 // Resulting dense will have batchSize*n elements
-//
 func UniformRandDense(batchSize, n int) *tensor.Dense {
 	data := make([]float64, batchSize*n)
 	for i := range data {
@@ -136,7 +134,6 @@ func PlotXY(x, y tensor.Tensor, fname string) error {
 // numSamples - how many sample generate
 // batchSize - batch size basically
 // n - number of elements in each batch (latent space size)
-//
 func GenerateNormTestSamples(vmGenerator, vmDiscriminator gorgonia.VM, inputGenerator, inputDiscriminator *gorgonia.Node, generatorOutValue gorgonia.Value, numSamples, batchSize, n int, shape tensor.Shape) (*tensor.Dense, error) {
 	var testSamplesTensor *tensor.Dense
 
@@ -194,7 +191,6 @@ func GenerateNormTestSamples(vmGenerator, vmDiscriminator gorgonia.VM, inputGene
 // numSamples - how many sample generate
 // batchSize - batch size basically
 // n - number of elements in each batch (latent space size)
-//
 func GenerateUniformTestSamples(vmGenerator, vmDiscriminator gorgonia.VM, inputGenerator, inputDiscriminator *gorgonia.Node, generatorOutValue gorgonia.Value, numSamples, batchSize, n int, shape tensor.Shape) (*tensor.Dense, error) {
 	var testSamplesTensor *tensor.Dense
 

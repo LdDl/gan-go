@@ -11,10 +11,9 @@ import (
 //
 // Layers - simple sequence of layers
 // out - alias to activated output of last layer
-//
 type Network struct {
 	Name   string
-	Layers []*Layer
+	Layers []Layer
 	out    *gorgonia.Node
 }
 
@@ -28,12 +27,7 @@ func (net *Network) Learnables() gorgonia.Nodes {
 	learnables := make(gorgonia.Nodes, 0, 2*len(net.Layers))
 	for _, l := range net.Layers {
 		if l != nil {
-			if l.WeightNode != nil {
-				learnables = append(learnables, l.WeightNode)
-			}
-			if l.BiasNode != nil {
-				learnables = append(learnables, l.BiasNode)
-			}
+			learnables = append(learnables, l.Learnables()...)
 		}
 	}
 	return learnables
@@ -41,12 +35,9 @@ func (net *Network) Learnables() gorgonia.Nodes {
 
 // Fwd Initializates feedforward for provided input
 //
-// inputs - Input node (or nodes)
+// inputs - Input node (or nodes). Only first layer of network can accept multiple inputs
 // batchSize - batch size. If it's >= 2 then broadcast function will be applied
-//
 func (net *Network) Fwd(batchSize int, inputs ...*gorgonia.Node) error {
-	var err error
-
 	if len(inputs) == 0 {
 		return fmt.Errorf("There are no input nodes for network")
 	}
@@ -59,54 +50,25 @@ func (net *Network) Fwd(batchSize int, inputs ...*gorgonia.Node) error {
 	if len(net.Layers) == 0 {
 		return fmt.Errorf("Network must have one layer atleast")
 	}
-	if net.Layers[0] == nil {
-		return fmt.Errorf("Network's layer #0 is nil")
-	}
 
-	// Feedforward input through first layer
-	firstLayerNonActivated, err := net.Layers[0].Fwd(batchSize, inputs...)
-	if err != nil {
-		return errors.Wrap(err, "[Network, Layer #0] Can't feedforward input before activation")
-	}
-	gorgonia.WithName(fmt.Sprintf("%s_0", networkName))(firstLayerNonActivated)
-	// Activate first layer's output
-	firstLayerActivated, err := net.Layers[0].Activation(firstLayerNonActivated)
-	if err != nil {
-		return errors.Wrap(err, "Can't apply activation function to non-activated output of Network's layer #0")
-	}
-	gorgonia.WithName(fmt.Sprintf("%s_activated_0", networkName))(firstLayerActivated)
-	net.Layers[0].outputActivatedNode = firstLayerActivated
-	lastActivatedLayer := firstLayerActivated
-
-	if len(net.Layers) == 1 {
-		net.out = lastActivatedLayer
-	}
-
-	// Feedforward input through remaining layers
-	for i := 1; i < len(net.Layers); i++ {
-		if net.Layers[i] == nil {
+	// Feedforward input through the layers
+	layerInputs := inputs
+	for i, layer := range net.Layers {
+		if layer == nil {
 			return fmt.Errorf("Network's layer #%d is nil", i)
 		}
-		if net.Layers[i].WeightNode == nil && !noWeightsAllowed(net.Layers[i].Type) {
-			return fmt.Errorf("Network's layer's #%d WeightNode is nil", i)
-		}
-		// Feedforward input through i-th layer (i != 0)
-		layerNonActivated, err := net.Layers[i].Fwd(batchSize, lastActivatedLayer)
+		layerNonActivated, err := layer.Fwd(batchSize, layerInputs...)
 		if err != nil {
 			return errors.Wrap(err, fmt.Sprintf("[Network, Layer #%d] Can't feedforward input before activation", i))
 		}
 		gorgonia.WithName(fmt.Sprintf("%s_%d", networkName, i))(layerNonActivated)
-		// Activate i-th layer's output (i != 0)
-		layerActivated, err := net.Layers[i].Activation(layerNonActivated)
+		layerActivated, err := layer.Activate(layerNonActivated)
 		if err != nil {
 			return errors.Wrap(err, fmt.Sprintf("Can't apply activation function to non-activated output of Network's layer #%d", i))
 		}
 		gorgonia.WithName(fmt.Sprintf("%s_activated_%d", networkName, i))(layerActivated)
-		net.Layers[i].outputActivatedNode = layerActivated
-		lastActivatedLayer = layerActivated
-		if i == len(net.Layers)-1 {
-			net.out = layerActivated
-		}
+		layerInputs = gorgonia.Nodes{layerActivated}
 	}
+	net.out = layerInputs[0]
 	return nil
 }

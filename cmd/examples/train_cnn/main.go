@@ -278,47 +278,29 @@ func defineCNN(g *gorgonia.ExprGraph) *gan.DiscriminatorNet {
 	dis_shp1 := tensor.Shape{3, 45}
 	dis_w1 := gorgonia.NewMatrix(g, gorgonia.Float64, gorgonia.WithShape(dis_shp1...), gorgonia.WithName("discriminator_train_w1"), gorgonia.WithInit(gorgonia.GlorotN(1.0)))
 	discriminator := gan.Discriminator(
-		[]*gan.Layer{
-			{
-				WeightNode: dis_w0,
-				BiasNode:   nil,
-				Type:       gan.LayerConvolutional,
-				Activation: gan.Rectify,
-				Options: &gan.Options{
-					KernelHeight: 3,
-					KernelWidth:  3,
-					Padding:      []int{0, 0},
-					Stride:       []int{1, 1},
-					Dilation:     []int{1, 1},
-				},
-			},
-			{
-				Type: gan.LayerDropout,
-				Options: &gan.Options{
-					Probability: 0.3,
-				},
-			},
-			{
-				Type:       gan.LayerMaxpool,
-				Activation: gan.NoActivation,
-				Options: &gan.Options{
-					KernelHeight: 2,
-					KernelWidth:  2,
-					Padding:      []int{0, 0},
-					Stride:       []int{2, 2},
-				},
-			},
-			{
-				Type:       gan.LayerFlatten,
-				Activation: gan.NoActivation,
-			},
-			{
-				WeightNode: dis_w1,
-				BiasNode:   nil,
-				Type:       gan.LayerLinear,
-				Activation: gan.Sigmoid,
-			},
-		}...,
+		&gan.Conv2DLayer{
+			WeightNode:   dis_w0,
+			Activation:   gan.Rectify,
+			KernelHeight: 3,
+			KernelWidth:  3,
+			Padding:      []int{0, 0},
+			Stride:       []int{1, 1},
+			Dilation:     []int{1, 1},
+		},
+		&gan.DropoutLayer{
+			Probability: 0.3,
+		},
+		&gan.MaxpoolLayer{
+			KernelHeight: 2,
+			KernelWidth:  2,
+			Padding:      []int{0, 0},
+			Stride:       []int{2, 2},
+		},
+		&gan.FlattenLayer{},
+		&gan.LinearLayer{
+			WeightNode: dis_w1,
+			Activation: gan.Sigmoid,
+		},
 	)
 	return discriminator
 }
