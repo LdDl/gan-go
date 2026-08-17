@@ -12,7 +12,6 @@ Generating f(x) = x^2             |  Generating f(x) = sin(x)
 - [Why](#why)
 - [Instruments](#instruments)
 - [Usage](#usage)
-- [ToDo](#todo)
 - [Code explanation](#code-explanation)
 - [Support and contributing](#support-and-contributing)
 
@@ -108,25 +107,6 @@ Plotting library - [gonum](https://github.com/gonum/plot#gonum-plot)
 
     ![Generated data on last epoch](cmd/examples/parabola/output/gen_reference_func_final.png)
 
-
-## ToDo
-Current stage of TODO list for future releases:
-- [x] Reduce duplicating of code for *.Fwd()* method of each neural network type (GAN/Discriminator/Generator)
-- [x] Switch **Layer** from *struct* to *interface* or use other technique for building clean code
-- [x] Add basic layers: Linear, Convolutional, Maxpool, Flatten
-- [x] Deal with batch process 
-- [x] More loss function
-    - [x] Cross Entropy
-    - [x] Binary Cross Entropy
-    - [x] L1
-    - [x] Huber (PSEUDO)
-- [x] Examples for text data generation
-- [x] Simple LSTM
-    - [x] Proper layer type
-    - [x] Examples
-- [x] RNN
-- [x] GRU
-- [x] Embedding    
 
 ## Code explanation
 @TODO
