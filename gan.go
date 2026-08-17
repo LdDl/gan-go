@@ -18,7 +18,7 @@ import (
 // is defined on its own graph (where it is trained) and its structure is copied into the GAN's graph
 // via CloneTo(...) method of Layer interface.
 // Each copied learnable node is created with gorgonia.WithValue(originalNode.Value()) which binds the SAME
-// underlying tensor (same backing memory) to both nodes — it is NOT a deep copy.
+// underlying tensor (same backing memory) to both nodes. It is NOT a deep copy.
 // Since Gorgonia's solvers update weights in-place, every training step of the Discriminator
 // on its own graph is immediately "visible" to the copied nodes in the GAN's graph.
 // So there is no need to manually sync weights between the two graphs.

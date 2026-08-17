@@ -36,7 +36,9 @@ Current examples folder contains limited set of layer types:
 - [x] Reshape
 - [x] Dropout
 - [x] Embedding
-- [ ] LSTM
+- [x] LSTM
+
+_Note #3_: *some layer types (e.g. LSTM) and examples (train_cnn, train_embedding, train_lstm) are not related to GAN topic itself. They just show how to build neural networks of other kinds with the same set of abstractions*
 
 ## Why
 Just want to do that in Golang ecosystem.
