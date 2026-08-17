@@ -32,17 +32,17 @@ Final output (may vary due the nature of rand() calls):
 Vocabulary size: 31
 Number of training windows: 21
 Epoch 0:
-	Loss: 0.11104210591411041
+	Loss: 0.11137403823085441
 Epoch 40:
-	Loss: 0.00882740368445253
+	Loss: 0.008837161521431165
 Epoch 80:
-	Loss: 0.00631720821663664
+	Loss: 0.0063879077699085015
 Epoch 120:
-	Loss: 2.4566094610844825e-05
+	Loss: 2.065410137371614e-05
 Epoch 160:
-	Loss: 0.011674595601638622
+	Loss: 0.011600077343201048
 Epoch 200:
-	Loss: 9.005437827311226e-06
+	Loss: 1.2344990516699006e-05
 Start testing generator after final epoch
 	Seed: the quick brown fox
 	Continued: the quick brown fox jumps over the lazy dog [OK]
