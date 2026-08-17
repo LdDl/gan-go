@@ -65,15 +65,15 @@ go run main.go
 Final output on for trainig data (may vary due the nature of rand() calls):
 ```shell
 Epoch 0:
-        Discriminator's loss: 0.0016569854606968827
+        Discriminator's loss: 0.0026480612737598626
 Epoch 40:
-        Discriminator's loss: 0.04548602801653217
+        Discriminator's loss: 0.00033844768507521126
 Epoch 80:
-        Discriminator's loss: 0.0034698363241729554
+        Discriminator's loss: 6.329202520987999e-06
 Epoch 120:
-        Discriminator's loss: 0.007486103427248882
+        Discriminator's loss: 0.00013934546753880707
 Epoch 160:
-        Discriminator's loss: 9.23967546782277e-05
+        Discriminator's loss: 3.365161658589933e-06
 Text assessment: Weak
         Its hashed value: [5 0 0 0 0]
         Its defined numerical assessment: 0.0
@@ -92,8 +92,8 @@ Text assessment: not good
 Text assessment: Good work
         Its hashed value: [14 24 0 0 0]
         Its defined numerical assessment: 1.0
-        Its evaluated numerical assessment: 0.9
-        Difference between defined and evaluated: 0.1
+        Its evaluated numerical assessment: 1.0
+        Difference between defined and evaluated: 0.0
 Text assessment: ordinary stuff
         Its hashed value: [23 44 0 0 0]
         Its defined numerical assessment: 0.5
@@ -112,13 +112,13 @@ Text assessment: average :(
 Text assessment: Great effort
         Its hashed value: [26 11 0 0 0]
         Its defined numerical assessment: 1.0
-        Its evaluated numerical assessment: 0.9
-        Difference between defined and evaluated: 0.1
+        Its evaluated numerical assessment: 1.0
+        Difference between defined and evaluated: 0.0
 Text assessment: poor work
         Its hashed value: [28 24 0 0 0]
         Its defined numerical assessment: 0.0
-        Its evaluated numerical assessment: 0.1
-        Difference between defined and evaluated: 0.1
+        Its evaluated numerical assessment: 0.0
+        Difference between defined and evaluated: 0.0
 Text assessment: boilerplate
         Its hashed value: [36 0 0 0 0]
         Its defined numerical assessment: 0.5
@@ -142,8 +142,8 @@ Text assessment: Excellent!
 Text assessment: nice work
         Its hashed value: [34 24 0 0 0]
         Its defined numerical assessment: 1.0
-        Its evaluated numerical assessment: 0.9
-        Difference between defined and evaluated: 0.1
+        Its evaluated numerical assessment: 1.0
+        Difference between defined and evaluated: 0.0
 Text assessment: Well done!
         Its hashed value: [26 13 0 0 0]
         Its defined numerical assessment: 1.0
