@@ -118,13 +118,13 @@ Current stage of TODO list for future releases:
     - [x] Binary Cross Entropy
     - [x] L1
     - [x] Huber (PSEUDO)
-- [ ] Examples for text data generation **WIP**
-- [ ] Simple LSTM
-    - [ ] Proper layer types for RNN **WIP**
-    - [ ] Examples
+- [x] Examples for text data generation
+- [x] Simple LSTM
+    - [x] Proper layer type
+    - [x] Examples
 - [ ] RNN
 - [ ] GRU
-- [ ] Embedding    
+- [x] Embedding    
 
 ## Code explanation
 @TODO
