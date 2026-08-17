@@ -5,6 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 	"gorgonia.org/gorgonia"
+	"gorgonia.org/tensor"
 )
 
 // Layer Interface for a single layer of a neural network.
@@ -77,6 +78,30 @@ func cloneLearnableTo(g *gorgonia.ExprGraph, node *gorgonia.Node, nameSuffix str
 		return nil
 	}
 	return gorgonia.NewTensor(g, node.Dtype(), node.Dims(), gorgonia.WithShape(node.Shape()...), gorgonia.WithName(node.Name()+nameSuffix), gorgonia.WithValue(node.Value()))
+}
+
+// sliceGate Extracts single gate (columns [idx*hiddenSize; (idx+1)*hiddenSize)) of a recurrent layer
+// and applies activation function to it.
+//
+// Three implementation notes:
+// 1. Slice of a node is a view sharing memory with the sliced node. Binary operations of Gorgonia
+// may write their result into the buffer of an operand, corrupting the source tensor,
+// so views are passed to unary operations only.
+// 2. Sliced gate is reshaped explicitly since slicing range of width 1 collapses the dimension.
+// 3. Order matters: reshape must be applied BEFORE the activation function.
+// The reversed order (slice, activation, reshape) produces incorrect gradients in the backward
+// pass of Gorgonia, which is verified by numerical gradient checks in the tests
+func sliceGate(gates *gorgonia.Node, idx, hiddenSize int, activation ActivationFunc) (*gorgonia.Node, error) {
+	batch := gates.Shape()[0]
+	gate, err := gorgonia.Slice(gates, nil, gorgonia.S(idx*hiddenSize, (idx+1)*hiddenSize))
+	if err != nil {
+		return nil, errors.Wrap(err, "Can't slice gate")
+	}
+	reshaped, err := gorgonia.Reshape(gate, tensor.Shape{batch, hiddenSize})
+	if err != nil {
+		return nil, errors.Wrap(err, "Can't reshape sliced gate")
+	}
+	return activation(reshaped)
 }
 
 func checkF64ValueInRange(input, min, max float64) bool {
