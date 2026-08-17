@@ -75,7 +75,7 @@ func checkLayerType(checkType LayerType, t ...LayerType) bool {
 }
 
 func checkF64ValueInRange(input, min, max float64) bool {
-	if input > max && input < min {
+	if input < min || input > max {
 		return false
 	}
 	return true
@@ -88,7 +88,7 @@ func checkF64ValueInRange(input, min, max float64) bool {
 //
 func (layer *Layer) Fwd(batchSize int, inputs ...*gorgonia.Node) (*gorgonia.Node, error) {
 	var err error
-	layerNonActivated := &gorgonia.Node{}
+	var layerNonActivated *gorgonia.Node
 
 	if len(inputs) == 0 {
 		return nil, fmt.Errorf("There are no input nodes for layer")
@@ -101,7 +101,7 @@ func (layer *Layer) Fwd(batchSize int, inputs ...*gorgonia.Node) (*gorgonia.Node
 	switch layer.Type {
 	case LayerLinear:
 		if len(inputs) > 1 {
-			return nil, fmt.Errorf("Layer's type '%d'can handle only 1 input node, got %d", layer.Type, len(inputs))
+			return nil, fmt.Errorf("Layer's type '%d' can handle only 1 input node, got %d", layer.Type, len(inputs))
 		}
 		input := inputs[0]
 		tOp, err := gorgonia.Transpose(layer.WeightNode)
@@ -121,7 +121,7 @@ func (layer *Layer) Fwd(batchSize int, inputs ...*gorgonia.Node) (*gorgonia.Node
 		}
 	case LayerConvolutional:
 		if len(inputs) > 1 {
-			return nil, fmt.Errorf("Layer's type '%d'can handle only 1 input node, got %d", layer.Type, len(inputs))
+			return nil, fmt.Errorf("Layer's type '%d' can handle only 1 input node, got %d", layer.Type, len(inputs))
 		}
 		input := inputs[0]
 		if layer.Options == nil {
@@ -133,7 +133,7 @@ func (layer *Layer) Fwd(batchSize int, inputs ...*gorgonia.Node) (*gorgonia.Node
 		}
 	case LayerMaxpool:
 		if len(inputs) > 1 {
-			return nil, fmt.Errorf("Layer's type '%d'can handle only 1 input node, got %d", layer.Type, len(inputs))
+			return nil, fmt.Errorf("Layer's type '%d' can handle only 1 input node, got %d", layer.Type, len(inputs))
 		}
 		input := inputs[0]
 		if layer.Options == nil {
@@ -145,7 +145,7 @@ func (layer *Layer) Fwd(batchSize int, inputs ...*gorgonia.Node) (*gorgonia.Node
 		}
 	case LayerFlatten:
 		if len(inputs) > 1 {
-			return nil, fmt.Errorf("Layer's type '%d'can handle only 1 input node, got %d", layer.Type, len(inputs))
+			return nil, fmt.Errorf("Layer's type '%d' can handle only 1 input node, got %d", layer.Type, len(inputs))
 		}
 		input := inputs[0]
 		// Help developers to not provide NoActivation for flatten layer
@@ -156,9 +156,12 @@ func (layer *Layer) Fwd(batchSize int, inputs ...*gorgonia.Node) (*gorgonia.Node
 		}
 	case LayerReshape:
 		if len(inputs) > 1 {
-			return nil, fmt.Errorf("Layer's type '%d'can handle only 1 input node, got %d", layer.Type, len(inputs))
+			return nil, fmt.Errorf("Layer's type '%d' can handle only 1 input node, got %d", layer.Type, len(inputs))
 		}
 		input := inputs[0]
+		if layer.Options == nil {
+			return nil, fmt.Errorf("Options haven't been provided for layer")
+		}
 		// Help developers to not provide NoActivation for reshaping layer
 		layer.Activation = NoActivation
 		layerNonActivated, err = gorgonia.Reshape(input, layer.Options.ReshapeDims)
@@ -167,9 +170,12 @@ func (layer *Layer) Fwd(batchSize int, inputs ...*gorgonia.Node) (*gorgonia.Node
 		}
 	case LayerDropout:
 		if len(inputs) > 1 {
-			return nil, fmt.Errorf("Layer's type '%d'can handle only 1 input node, got %d", layer.Type, len(inputs))
+			return nil, fmt.Errorf("Layer's type '%d' can handle only 1 input node, got %d", layer.Type, len(inputs))
 		}
 		input := inputs[0]
+		if layer.Options == nil {
+			return nil, fmt.Errorf("Options haven't been provided for layer")
+		}
 		// Help developers to not provide NoActivation for dropout layer
 		layer.Activation = NoActivation
 		if ok := checkF64ValueInRange(layer.Options.Probability, 0.0, 1.0); !ok {
@@ -181,9 +187,12 @@ func (layer *Layer) Fwd(batchSize int, inputs ...*gorgonia.Node) (*gorgonia.Node
 		}
 	case LayerEmbedding:
 		if len(inputs) > 1 {
-			return nil, fmt.Errorf("Layer's type '%d'can handle only 1 input node, got %d", layer.Type, len(inputs))
+			return nil, fmt.Errorf("Layer's type '%d' can handle only 1 input node, got %d", layer.Type, len(inputs))
 		}
 		input := inputs[0]
+		if layer.Options == nil {
+			return nil, fmt.Errorf("Options haven't been provided for layer")
+		}
 		if input.Type().String() != "Vector int" {
 			return nil, fmt.Errorf("Layer is implemented for type 'Int' not for '%s'", input.Type().String())
 		}
