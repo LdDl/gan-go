@@ -36,7 +36,7 @@ Current examples folder contains limited set of layer types:
 - [x] Reshape
 - [x] Dropout
 - [x] Embedding
-- [ ] LSTM
+- [x] LSTM
 
 ## Why
 Just want to do that in Golang ecosystem.
