@@ -38,8 +38,9 @@ Current examples folder contains limited set of layer types:
 - [x] Embedding
 - [x] LSTM
 - [x] RNN
+- [x] GRU
 
-_Note #3_: *some layer types (e.g. LSTM, RNN) and examples (train_cnn, train_embedding, train_lstm, train_rnn) are not related to GAN topic itself. They just show how to build neural networks of other kinds with the same set of abstractions*
+_Note #3_: *some layer types (e.g. LSTM, RNN, GRU) and examples (train_cnn, train_embedding, train_lstm, train_rnn, train_gru) are not related to GAN topic itself. They just show how to build neural networks of other kinds with the same set of abstractions*
 
 ## Why
 Just want to do that in Golang ecosystem.
@@ -124,7 +125,7 @@ Current stage of TODO list for future releases:
     - [x] Proper layer type
     - [x] Examples
 - [x] RNN
-- [ ] GRU
+- [x] GRU
 - [x] Embedding    
 
 ## Code explanation

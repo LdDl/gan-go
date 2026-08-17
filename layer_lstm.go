@@ -209,15 +209,6 @@ func (layer *LSTMLayer) Fwd(batchSize int, inputs ...*gorgonia.Node) (*gorgonia.
 	return layerNonActivated, nil
 }
 
-// sliceGate Extracts single gate (columns [idx*hiddenSize; (idx+1)*hiddenSize)) and applies activation function to it
-func sliceGate(gates *gorgonia.Node, idx, hiddenSize int, activation ActivationFunc) (*gorgonia.Node, error) {
-	gate, err := gorgonia.Slice(gates, nil, gorgonia.S(idx*hiddenSize, (idx+1)*hiddenSize))
-	if err != nil {
-		return nil, errors.Wrap(err, "Can't slice gate")
-	}
-	return activation(gate)
-}
-
 // Activate LSTM layer does not imply activation of output: activation functions are applied inside of the cell
 func (layer *LSTMLayer) Activate(input *gorgonia.Node) (*gorgonia.Node, error) {
 	return input, nil
