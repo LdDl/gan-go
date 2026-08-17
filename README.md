@@ -31,7 +31,7 @@ Current examples folder contains limited set of layer types:
 - [x] Linear
 - [x] Convolutional
 - [x] Maxpool
-- [ ] AvgPool
+- [x] AvgPool
 - [x] Flatten
 - [x] Reshape
 - [x] Dropout
