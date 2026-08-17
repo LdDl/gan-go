@@ -166,7 +166,7 @@ func L1Loss(a, b *gorgonia.Node, reduction ...LossReduction) (*gorgonia.Node, er
 // Default reduction is 'mean'
 func HuberLoss(a, b *gorgonia.Node, delta interface{}, reduction ...LossReduction) (*gorgonia.Node, error) {
 	// Important: value (input) nodes MUST be named uniquely here.
-	// Gorgonia hashes input nodes by (type + shape + name) only — the value is NOT part of the hash.
+	// Gorgonia hashes input nodes by (type + shape + name) only. The value is NOT part of the hash.
 	// Two unnamed scalars of the same dtype would be deduplicated into a single node by the graph,
 	// silently replacing e.g. the constant 1.0 with the value of delta.
 	deltaScalar := gorgonia.NewScalar(a.Graph(), a.Dtype(), gorgonia.WithValue(delta), gorgonia.WithName(fmt.Sprintf("huber_delta_%d_%d", a.ID(), b.ID())))
