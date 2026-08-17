@@ -36,7 +36,7 @@ func NormRandDense(batchSize, n int) *tensor.Dense {
 	return tensor.New(tensor.WithShape(batchSize, n), tensor.WithBacking(data))
 }
 
-// NormRandDense Return reference to tensor.Dense filled with pseudo-random float64 values in range [0.0,1.0)
+// UniformRandDense Return reference to tensor.Dense filled with pseudo-random float64 values in range [0.0,1.0)
 //
 // batchSize - Simply batch size
 // n - Number of elements in each batch
@@ -164,11 +164,11 @@ func GenerateNormTestSamples(vmGenerator, vmDiscriminator gorgonia.VM, inputGene
 		}
 		err = gorgonia.Let(inputDiscriminator, tensorVConcat)
 		if err != nil {
-			panic(err)
+			return nil, errors.Wrap(err, "Can't init input value for Discriminator")
 		}
 		err = vmDiscriminator.RunAll()
 		if err != nil {
-			panic(err)
+			return nil, errors.Wrap(err, "Can't run Discriminator's VM")
 		}
 		vmDiscriminator.Reset()
 		if i == 0 {
@@ -176,7 +176,7 @@ func GenerateNormTestSamples(vmGenerator, vmDiscriminator gorgonia.VM, inputGene
 		} else {
 			newT, err := testSamplesTensor.Vstack(tensorV)
 			if err != nil {
-				panic(err)
+				return nil, errors.Wrap(err, "Can't do vertical stacking")
 			}
 			testSamplesTensor = newT
 		}
@@ -222,11 +222,11 @@ func GenerateUniformTestSamples(vmGenerator, vmDiscriminator gorgonia.VM, inputG
 		}
 		err = gorgonia.Let(inputDiscriminator, tensorVConcat)
 		if err != nil {
-			panic(err)
+			return nil, errors.Wrap(err, "Can't init input value for Discriminator")
 		}
 		err = vmDiscriminator.RunAll()
 		if err != nil {
-			panic(err)
+			return nil, errors.Wrap(err, "Can't run Discriminator's VM")
 		}
 		vmDiscriminator.Reset()
 		if i == 0 {
@@ -234,7 +234,7 @@ func GenerateUniformTestSamples(vmGenerator, vmDiscriminator gorgonia.VM, inputG
 		} else {
 			newT, err := testSamplesTensor.Vstack(tensorV)
 			if err != nil {
-				panic(err)
+				return nil, errors.Wrap(err, "Can't do vertical stacking")
 			}
 			testSamplesTensor = newT
 		}
@@ -339,47 +339,36 @@ func HashingTrick(sentence string, vocab int, ht HashType) ([]int64, error) {
 }
 
 func HashingTrickFNV32A(sentenceWords []string, vocab int) []int64 {
-	hashedList := make([]int, vocab)
 	ans := make([]int64, len(sentenceWords))
 	for i, word := range sentenceWords {
 		h := fnv.New32a()
 		h.Write([]byte(word))
 		hashed := h.Sum32()
-		hexInt := big.NewInt(int64(hashed))
+		hexInt := new(big.Int).SetUint64(uint64(hashed))
 		bigVectorLength := big.NewInt(int64(vocab))
-		modulo := new(big.Int)
-		modulo = modulo.Mod(hexInt, bigVectorLength)
-		moduloInt64 := modulo.Int64()
-		hashedList[moduloInt64] += 1
-		if hashedList[moduloInt64] > 0 {
-			ans[i] = moduloInt64
-		}
+		modulo := new(big.Int).Mod(hexInt, bigVectorLength)
+		ans[i] = modulo.Int64()
 	}
 	return ans
 }
 
 func HashingTrickFNV64A(sentenceWords []string, vocab int) []int64 {
-	hashedList := make([]int, vocab)
 	ans := make([]int64, len(sentenceWords))
 	for i, word := range sentenceWords {
 		h := fnv.New64a()
 		h.Write([]byte(word))
 		hashed := h.Sum64()
-		hexInt := big.NewInt(int64(hashed))
+		// Note: SetUint64 is used instead of big.NewInt(int64(hashed)) because
+		// casting uint64 to int64 can produce negative values
+		hexInt := new(big.Int).SetUint64(hashed)
 		bigVectorLength := big.NewInt(int64(vocab))
-		modulo := new(big.Int)
-		modulo = modulo.Mod(hexInt, bigVectorLength)
-		moduloInt64 := modulo.Int64()
-		hashedList[moduloInt64] += 1
-		if hashedList[moduloInt64] > 0 {
-			ans[i] = moduloInt64
-		}
+		modulo := new(big.Int).Mod(hexInt, bigVectorLength)
+		ans[i] = modulo.Int64()
 	}
 	return ans
 }
 
 func HashingTrickSHA256(sentenceWords []string, vocab int) ([]int64, error) {
-	hashedList := make([]int, vocab)
 	ans := make([]int64, len(sentenceWords))
 	for i, word := range sentenceWords {
 		hashedValue := sha256.New()
@@ -391,19 +380,13 @@ func HashingTrickSHA256(sentenceWords []string, vocab int) ([]int64, error) {
 			return nil, fmt.Errorf("can't create big int from hex")
 		}
 		bigVectorLength := big.NewInt(int64(vocab))
-		modulo := new(big.Int)
-		modulo = modulo.Mod(hexInt, bigVectorLength)
-		moduloInt64 := modulo.Int64()
-		hashedList[moduloInt64] += 1
-		if hashedList[moduloInt64] > 0 {
-			ans[i] = moduloInt64
-		}
+		modulo := new(big.Int).Mod(hexInt, bigVectorLength)
+		ans[i] = modulo.Int64()
 	}
 	return ans, nil
 }
 
 func HashingTrickSHA512(sentenceWords []string, vocab int) ([]int64, error) {
-	hashedList := make([]int, vocab)
 	ans := make([]int64, len(sentenceWords))
 	for i, word := range sentenceWords {
 		hashedValue := sha512.New()
@@ -415,19 +398,13 @@ func HashingTrickSHA512(sentenceWords []string, vocab int) ([]int64, error) {
 			return nil, fmt.Errorf("can't create big int from hex")
 		}
 		bigVectorLength := big.NewInt(int64(vocab))
-		modulo := new(big.Int)
-		modulo = modulo.Mod(hexInt, bigVectorLength)
-		moduloInt64 := modulo.Int64()
-		hashedList[moduloInt64] += 1
-		if hashedList[moduloInt64] > 0 {
-			ans[i] = moduloInt64
-		}
+		modulo := new(big.Int).Mod(hexInt, bigVectorLength)
+		ans[i] = modulo.Int64()
 	}
 	return ans, nil
 }
 
 func HashingTrickMD5(sentenceWords []string, vocab int) ([]int64, error) {
-	hashedList := make([]int, vocab)
 	ans := make([]int64, len(sentenceWords))
 	for i, word := range sentenceWords {
 		hashedValue := md5.New()
@@ -439,13 +416,8 @@ func HashingTrickMD5(sentenceWords []string, vocab int) ([]int64, error) {
 			return nil, fmt.Errorf("can't create big int from hex")
 		}
 		bigVectorLength := big.NewInt(int64(vocab))
-		modulo := new(big.Int)
-		modulo = modulo.Mod(hexInt, bigVectorLength)
-		moduloInt64 := modulo.Int64()
-		hashedList[moduloInt64] += 1
-		if hashedList[moduloInt64] > 0 {
-			ans[i] = moduloInt64
-		}
+		modulo := new(big.Int).Mod(hexInt, bigVectorLength)
+		ans[i] = modulo.Int64()
 	}
 	return ans, nil
 }
