@@ -66,7 +66,7 @@ func numericGradCheck(t *testing.T, g *gorgonia.ExprGraph, out *gorgonia.Node, l
 
 func TestLSTMGradients(t *testing.T) {
 	g, layer, xNode, _ := buildLSTMFixture(t)
-	out, err := layer.Fwd(1, xNode)
+	out, err := layer.Fwd(xNode)
 	if err != nil {
 		t.Fatalf("Fwd error: %v", err)
 	}
@@ -75,7 +75,7 @@ func TestLSTMGradients(t *testing.T) {
 
 func TestGRUGradients(t *testing.T) {
 	g, layer, xNode, _ := buildGRUFixture(t)
-	out, err := layer.Fwd(1, xNode)
+	out, err := layer.Fwd(xNode)
 	if err != nil {
 		t.Fatalf("Fwd error: %v", err)
 	}
@@ -84,7 +84,7 @@ func TestGRUGradients(t *testing.T) {
 
 func TestRNNGradients(t *testing.T) {
 	g, layer, xNode, _ := buildRNNFixture(t)
-	out, err := layer.Fwd(1, xNode)
+	out, err := layer.Fwd(xNode)
 	if err != nil {
 		t.Fatalf("Fwd error: %v", err)
 	}

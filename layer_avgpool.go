@@ -17,7 +17,7 @@ type AvgpoolLayer struct {
 }
 
 // Fwd Initializates feedforward for provided input
-func (layer *AvgpoolLayer) Fwd(batchSize int, inputs ...*gorgonia.Node) (*gorgonia.Node, error) {
+func (layer *AvgpoolLayer) Fwd(inputs ...*gorgonia.Node) (*gorgonia.Node, error) {
 	input, err := singleInput("avgpool", inputs...)
 	if err != nil {
 		return nil, err

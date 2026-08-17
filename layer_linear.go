@@ -14,10 +14,10 @@ type LinearLayer struct {
 	Activation ActivationFunc
 }
 
-// Fwd Initializates feedforward for provided input
-//
-// batchSize - batch size. If it's >= 2 then batched multiplication/broadcasting will be applied
-func (layer *LinearLayer) Fwd(batchSize int, inputs ...*gorgonia.Node) (*gorgonia.Node, error) {
+// Fwd Initializates feedforward for provided input.
+// Plain matrix multiplication handles 2D input of any batch size,
+// batched multiplication is applied for inputs of higher dimensions
+func (layer *LinearLayer) Fwd(inputs ...*gorgonia.Node) (*gorgonia.Node, error) {
 	input, err := singleInput("linear", inputs...)
 	if err != nil {
 		return nil, err
@@ -30,18 +30,18 @@ func (layer *LinearLayer) Fwd(batchSize int, inputs ...*gorgonia.Node) (*gorgoni
 		return nil, errors.Wrap(err, "Can't transpose weights of layer")
 	}
 	var layerNonActivated *gorgonia.Node
-	if batchSize < 2 {
+	if input.Dims() <= 2 {
 		layerNonActivated, err = gorgonia.Mul(input, tOp)
 		if err != nil {
-			return nil, errors.Wrap(err, "Can't multiply input and weights of layer [batch_size = 1]")
+			return nil, errors.Wrap(err, "Can't multiply input and weights of layer")
 		}
 	} else {
 		layerNonActivated, err = gorgonia.BatchedMatMul(input, tOp)
 		if err != nil {
-			return nil, errors.Wrap(err, fmt.Sprintf("Can't multiply input and weights of layer [batch_size = %d]", batchSize))
+			return nil, errors.Wrap(err, "Can't multiply input and weights of layer [batched]")
 		}
 	}
-	return addBias(layerNonActivated, layer.BiasNode, batchSize)
+	return addBias(layerNonActivated, layer.BiasNode)
 }
 
 // Activate Applies layer's activation function

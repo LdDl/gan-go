@@ -102,7 +102,7 @@ func buildLSTMFixture(t *testing.T) (*gorgonia.ExprGraph, *LSTMLayer, *gorgonia.
 
 func TestLSTMForward(t *testing.T) {
 	g, layer, xNode, want := buildLSTMFixture(t)
-	out, err := layer.Fwd(1, xNode)
+	out, err := layer.Fwd(xNode)
 	if err != nil {
 		t.Fatalf("Fwd error: %v", err)
 	}
@@ -131,7 +131,7 @@ func TestLSTMForward(t *testing.T) {
 
 func TestLSTMSolverStep(t *testing.T) {
 	g, layer, xNode, _ := buildLSTMFixture(t)
-	out, err := layer.Fwd(1, xNode)
+	out, err := layer.Fwd(xNode)
 	if err != nil {
 		t.Fatalf("Fwd error: %v", err)
 	}
@@ -185,7 +185,7 @@ func TestLSTMHiddenSizeOne(t *testing.T) {
 		BiasNode:         bNode,
 		HiddenSize:       H,
 	}
-	out, err := layer.Fwd(1, xNode)
+	out, err := layer.Fwd(xNode)
 	if err != nil {
 		t.Fatalf("Fwd error: %v", err)
 	}

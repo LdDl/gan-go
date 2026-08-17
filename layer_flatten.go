@@ -6,17 +6,19 @@ import (
 	"gorgonia.org/tensor"
 )
 
-// FlattenLayer Represents input tensor as [batchSize x Total number of elements in tensor / batchSize].
+// FlattenLayer Represents input tensor as [batch x Total number of elements in tensor / batch].
+// Batch size is derived from the first dimension of the input.
 // Has no learnable parameters and no activation.
 type FlattenLayer struct {
 }
 
 // Fwd Initializates feedforward for provided input
-func (layer *FlattenLayer) Fwd(batchSize int, inputs ...*gorgonia.Node) (*gorgonia.Node, error) {
+func (layer *FlattenLayer) Fwd(inputs ...*gorgonia.Node) (*gorgonia.Node, error) {
 	input, err := singleInput("flatten", inputs...)
 	if err != nil {
 		return nil, err
 	}
+	batchSize := input.Shape()[0]
 	flatten, err := gorgonia.Reshape(input, tensor.Shape{batchSize, input.Shape().TotalSize() / batchSize})
 	if err != nil {
 		return nil, errors.Wrap(err, "Can't flatten input of layer")

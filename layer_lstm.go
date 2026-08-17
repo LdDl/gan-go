@@ -61,8 +61,7 @@ func (layer *LSTMLayer) FinalCell() *gorgonia.Node {
 // Fwd Initializates feedforward for provided input
 //
 // inputs - either single input node or (input, initial hidden state, initial cell state) triple
-// batchSize - not used by this layer type since batch size is derived from the input shape
-func (layer *LSTMLayer) Fwd(batchSize int, inputs ...*gorgonia.Node) (*gorgonia.Node, error) {
+func (layer *LSTMLayer) Fwd(inputs ...*gorgonia.Node) (*gorgonia.Node, error) {
 	var input, hiddenState, cellState *gorgonia.Node
 	switch len(inputs) {
 	case 1:
@@ -145,7 +144,7 @@ func (layer *LSTMLayer) Fwd(batchSize int, inputs ...*gorgonia.Node) (*gorgonia.
 		if err != nil {
 			return nil, errors.Wrap(err, "Can't sum input and hidden projections of LSTM layer")
 		}
-		gates, err = addBias(gates, layer.BiasNode, batch)
+		gates, err = addBias(gates, layer.BiasNode)
 		if err != nil {
 			return nil, errors.Wrap(err, "Can't add bias to gates of LSTM layer")
 		}

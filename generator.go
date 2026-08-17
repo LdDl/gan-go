@@ -33,10 +33,9 @@ func (net *GeneratorNet) Learnables() gorgonia.Nodes {
 
 // Fwd Initializates feedforward for provided input
 //
-// input - Input node (or nodes)
-// batchSize - batch size. If it's >= 2 then broadcast function will be applied
-func (net *GeneratorNet) Fwd(batchSize int, inputs ...*gorgonia.Node) error {
-	if err := net.private.Fwd(batchSize, inputs...); err != nil {
+// input - Input node (or nodes). Batch size is derived from shapes of the inputs
+func (net *GeneratorNet) Fwd(inputs ...*gorgonia.Node) error {
+	if err := net.private.Fwd(inputs...); err != nil {
 		return errors.Wrap(err, "[Generator]")
 	}
 	return nil

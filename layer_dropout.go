@@ -14,7 +14,7 @@ type DropoutLayer struct {
 }
 
 // Fwd Initializates feedforward for provided input
-func (layer *DropoutLayer) Fwd(batchSize int, inputs ...*gorgonia.Node) (*gorgonia.Node, error) {
+func (layer *DropoutLayer) Fwd(inputs ...*gorgonia.Node) (*gorgonia.Node, error) {
 	input, err := singleInput("dropout", inputs...)
 	if err != nil {
 		return nil, err

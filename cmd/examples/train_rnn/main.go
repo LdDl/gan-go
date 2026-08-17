@@ -50,7 +50,7 @@ func main() {
 
 	/* Prepare tensor for input values */
 	inputNet := gorgonia.NewTensor(netGraph, gorgonia.Int, 1, gorgonia.WithShape(sequenceLength), gorgonia.WithName("rnn_train_input"))
-	err := rnnNet.Fwd(1, inputNet)
+	err := rnnNet.Fwd(inputNet)
 	if err != nil {
 		panic(err)
 	}

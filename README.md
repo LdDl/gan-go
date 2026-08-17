@@ -114,7 +114,7 @@ Current stage of TODO list for future releases:
 - [x] Reduce duplicating of code for *.Fwd()* method of each neural network type (GAN/Discriminator/Generator)
 - [x] Switch **Layer** from *struct* to *interface* or use other technique for building clean code
 - [x] Add basic layers: Linear, Convolutional, Maxpool, Flatten
-- [ ] Deal with batch process 
+- [x] Deal with batch process 
 - [x] More loss function
     - [x] Cross Entropy
     - [x] Binary Cross Entropy
