@@ -16,7 +16,7 @@ type EmbeddingLayer struct {
 }
 
 // Fwd Initializates feedforward for provided input
-func (layer *EmbeddingLayer) Fwd(batchSize int, inputs ...*gorgonia.Node) (*gorgonia.Node, error) {
+func (layer *EmbeddingLayer) Fwd(inputs ...*gorgonia.Node) (*gorgonia.Node, error) {
 	input, err := singleInput("embedding", inputs...)
 	if err != nil {
 		return nil, err

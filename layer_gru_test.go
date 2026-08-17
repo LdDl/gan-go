@@ -107,7 +107,7 @@ func buildGRUFixture(t *testing.T) (*gorgonia.ExprGraph, *GRULayer, *gorgonia.No
 
 func TestGRUForward(t *testing.T) {
 	g, layer, xNode, want := buildGRUFixture(t)
-	out, err := layer.Fwd(1, xNode)
+	out, err := layer.Fwd(xNode)
 	if err != nil {
 		t.Fatalf("Fwd error: %v", err)
 	}
@@ -136,7 +136,7 @@ func TestGRUForward(t *testing.T) {
 
 func TestGRUSolverStep(t *testing.T) {
 	g, layer, xNode, _ := buildGRUFixture(t)
-	out, err := layer.Fwd(1, xNode)
+	out, err := layer.Fwd(xNode)
 	if err != nil {
 		t.Fatalf("Fwd error: %v", err)
 	}
@@ -190,7 +190,7 @@ func TestGRUHiddenSizeOne(t *testing.T) {
 		BiasNode:         bNode,
 		HiddenSize:       H,
 	}
-	out, err := layer.Fwd(1, xNode)
+	out, err := layer.Fwd(xNode)
 	if err != nil {
 		t.Fatalf("Fwd error: %v", err)
 	}

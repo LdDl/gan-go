@@ -70,7 +70,7 @@ func TestNewGANSharedWeights(t *testing.T) {
 		},
 	)
 	genInput := mk11(ganGraph, "gen_in", 1.0)
-	if err := generator.Fwd(1, genInput); err != nil {
+	if err := generator.Fwd(genInput); err != nil {
 		t.Fatal(err)
 	}
 
@@ -86,7 +86,7 @@ func TestNewGANSharedWeights(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := theGAN.Fwd(1); err != nil {
+	if err := theGAN.Fwd(); err != nil {
 		t.Fatal(err)
 	}
 

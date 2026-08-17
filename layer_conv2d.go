@@ -22,9 +22,7 @@ type Conv2DLayer struct {
 }
 
 // Fwd Initializates feedforward for provided input
-//
-// batchSize - batch size. If it's >= 2 then broadcast function will be applied for bias part
-func (layer *Conv2DLayer) Fwd(batchSize int, inputs ...*gorgonia.Node) (*gorgonia.Node, error) {
+func (layer *Conv2DLayer) Fwd(inputs ...*gorgonia.Node) (*gorgonia.Node, error) {
 	input, err := singleInput("conv2d", inputs...)
 	if err != nil {
 		return nil, err
@@ -36,7 +34,7 @@ func (layer *Conv2DLayer) Fwd(batchSize int, inputs ...*gorgonia.Node) (*gorgoni
 	if err != nil {
 		return nil, errors.Wrap(err, "Can't convolve[2D] input by kernel of layer")
 	}
-	return addBias(layerNonActivated, layer.BiasNode, batchSize)
+	return addBias(layerNonActivated, layer.BiasNode)
 }
 
 // Activate Applies layer's activation function

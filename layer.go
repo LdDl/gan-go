@@ -10,7 +10,10 @@ import (
 
 // Layer Interface for a single layer of a neural network.
 //
-// Fwd - Builds forward pass for provided inputs and returns non-activated output node
+// Fwd - Builds forward pass for provided inputs and returns non-activated output node.
+//
+//	Batch size is derived from shapes of the inputs, first dimension is considered to be the batch one.
+//
 // Activate - Applies layer's activation function to non-activated output node.
 //
 //	Layers which do not imply activation (e.g. Flatten/Reshape/Dropout/Embedding) just return input node as is.
@@ -21,7 +24,7 @@ import (
 //	Learnable nodes of the copy are new nodes bound to THE SAME underlying tensors,
 //	see notes for NewGAN in gan.go about this shared-memory trick.
 type Layer interface {
-	Fwd(batchSize int, inputs ...*gorgonia.Node) (*gorgonia.Node, error)
+	Fwd(inputs ...*gorgonia.Node) (*gorgonia.Node, error)
 	Activate(input *gorgonia.Node) (*gorgonia.Node, error)
 	Learnables() gorgonia.Nodes
 	CloneTo(g *gorgonia.ExprGraph, nameSuffix string) (Layer, error)
@@ -40,12 +43,12 @@ func singleInput(layerType string, inputs ...*gorgonia.Node) (*gorgonia.Node, er
 
 // addBias Helper adding bias node to non-activated output of a layer.
 // If bias node is nil then non-activated output is returned as is.
-//
-// batchSize - batch size. If it's >= 2 then broadcast function will be applied
-func addBias(layerNonActivated, bias *gorgonia.Node, batchSize int) (*gorgonia.Node, error) {
+// If batch size (first dimension of the non-activated output) is >= 2 then broadcast function will be applied
+func addBias(layerNonActivated, bias *gorgonia.Node) (*gorgonia.Node, error) {
 	if bias == nil {
 		return layerNonActivated, nil
 	}
+	batchSize := layerNonActivated.Shape()[0]
 	if batchSize < 2 {
 		withBias, err := gorgonia.Add(layerNonActivated, bias)
 		if err != nil {

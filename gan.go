@@ -88,10 +88,10 @@ func (net *GAN) GeneratorLearnables() gorgonia.Nodes {
 
 // Fwd Initializates feedforward for provided input for disciminator part of GAN
 //
-// batchSize - batch size. If it's >= 2 then broadcast function will be applied
-// Note: input node is not needed since input for Discriminator is just Generator's output
-func (net *GAN) Fwd(batchSize int) error {
-	if err := net.modifiedDiscriminator.Fwd(batchSize, net.generatorPart.Out()); err != nil {
+// Note: input node is not needed since input for Discriminator is just Generator's output.
+// Batch size is derived from shape of Generator's output
+func (net *GAN) Fwd() error {
+	if err := net.modifiedDiscriminator.Fwd(net.generatorPart.Out()); err != nil {
 		return errors.Wrap(err, "[GAN, Discriminator part]")
 	}
 	net.out = net.modifiedDiscriminator.private.out

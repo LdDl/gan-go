@@ -79,7 +79,7 @@ func main() {
 	definedGenerator := defineGenerator(ganGraph)
 	// Initialize Generator feedforward
 	inputGenerator := gorgonia.NewTensor(ganGraph, gorgonia.Float64, 4, gorgonia.WithShape(latentShape...), gorgonia.WithName("generator_input"))
-	err := definedGenerator.Fwd(batchSize, inputGenerator)
+	err := definedGenerator.Fwd(inputGenerator)
 	if err != nil {
 		panic(err)
 	}
@@ -88,7 +88,7 @@ func main() {
 	discriminatorTrain := defineDiscriminator(trainDiscriminatorGraph)
 	// Initialize Discriminator feedforward
 	inputDiscriminatorTrain := gorgonia.NewTensor(trainDiscriminatorGraph, gorgonia.Float64, 4, gorgonia.WithShape(2*batchSize, imgChannels, imgHeight, imgWidth), gorgonia.WithName("discriminator_train_input"))
-	err = discriminatorTrain.Fwd(2*batchSize, inputDiscriminatorTrain)
+	err = discriminatorTrain.Fwd(inputDiscriminatorTrain)
 	if err != nil {
 		panic(err)
 	}
@@ -98,7 +98,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	err = definedGAN.Fwd(batchSize)
+	err = definedGAN.Fwd()
 	if err != nil {
 		panic(err)
 	}

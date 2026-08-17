@@ -56,8 +56,7 @@ func (layer *GRULayer) FinalHidden() *gorgonia.Node {
 // Fwd Initializates feedforward for provided input
 //
 // inputs - either single input node or (input, initial hidden state) pair
-// batchSize - not used by this layer type since batch size is derived from the input shape
-func (layer *GRULayer) Fwd(batchSize int, inputs ...*gorgonia.Node) (*gorgonia.Node, error) {
+func (layer *GRULayer) Fwd(inputs ...*gorgonia.Node) (*gorgonia.Node, error) {
 	var input, hiddenState *gorgonia.Node
 	switch len(inputs) {
 	case 1:
@@ -134,7 +133,7 @@ func (layer *GRULayer) Fwd(batchSize int, inputs ...*gorgonia.Node) (*gorgonia.N
 		if err != nil {
 			return nil, errors.Wrap(err, "Can't multiply time step input and input weights of GRU layer")
 		}
-		inputProjection, err = addBias(inputProjection, layer.BiasNode, batch)
+		inputProjection, err = addBias(inputProjection, layer.BiasNode)
 		if err != nil {
 			return nil, errors.Wrap(err, "Can't add bias to input projection of GRU layer")
 		}

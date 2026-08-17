@@ -86,7 +86,7 @@ func buildRNNFixture(t *testing.T) (*gorgonia.ExprGraph, *RNNLayer, *gorgonia.No
 
 func TestRNNForward(t *testing.T) {
 	g, layer, xNode, want := buildRNNFixture(t)
-	out, err := layer.Fwd(1, xNode)
+	out, err := layer.Fwd(xNode)
 	if err != nil {
 		t.Fatalf("Fwd error: %v", err)
 	}
@@ -115,7 +115,7 @@ func TestRNNForward(t *testing.T) {
 
 func TestRNNSolverStep(t *testing.T) {
 	g, layer, xNode, _ := buildRNNFixture(t)
-	out, err := layer.Fwd(1, xNode)
+	out, err := layer.Fwd(xNode)
 	if err != nil {
 		t.Fatalf("Fwd error: %v", err)
 	}

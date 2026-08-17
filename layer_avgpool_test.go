@@ -27,7 +27,7 @@ func TestAvgpoolForward(t *testing.T) {
 		Padding:      []int{0, 0},
 		Stride:       []int{2, 2},
 	}
-	out, err := layer.Fwd(1, in)
+	out, err := layer.Fwd(in)
 	if err != nil {
 		t.Fatalf("Fwd error: %v", err)
 	}

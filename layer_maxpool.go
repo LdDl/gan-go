@@ -17,7 +17,7 @@ type MaxpoolLayer struct {
 }
 
 // Fwd Initializates feedforward for provided input
-func (layer *MaxpoolLayer) Fwd(batchSize int, inputs ...*gorgonia.Node) (*gorgonia.Node, error) {
+func (layer *MaxpoolLayer) Fwd(inputs ...*gorgonia.Node) (*gorgonia.Node, error) {
 	input, err := singleInput("maxpool", inputs...)
 	if err != nil {
 		return nil, err

@@ -12,7 +12,7 @@ type ReshapeLayer struct {
 }
 
 // Fwd Initializates feedforward for provided input
-func (layer *ReshapeLayer) Fwd(batchSize int, inputs ...*gorgonia.Node) (*gorgonia.Node, error) {
+func (layer *ReshapeLayer) Fwd(inputs ...*gorgonia.Node) (*gorgonia.Node, error) {
 	input, err := singleInput("reshape", inputs...)
 	if err != nil {
 		return nil, err

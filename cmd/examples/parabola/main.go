@@ -64,7 +64,7 @@ func main() {
 	definedGenerator := defineGenerator(ganGraph)
 	// Initialize Generator feedforward
 	inputGenerator := gorgonia.NewMatrix(ganGraph, gorgonia.Float64, gorgonia.WithShape(batchSize, latentSpaceSize), gorgonia.WithName("generator_input"))
-	err = definedGenerator.Fwd(batchSize, inputGenerator)
+	err = definedGenerator.Fwd(inputGenerator)
 	if err != nil {
 		panic(err)
 	}
@@ -73,14 +73,14 @@ func main() {
 	discriminatorTrain := defineDiscriminator(trainDiscriminatorGraph)
 	// Initialize Discriminator feedforward
 	inputDiscriminatorTrain := gorgonia.NewMatrix(trainDiscriminatorGraph, gorgonia.Float64, gorgonia.WithShape(2*batchSize, 2), gorgonia.WithName("discriminator_train_input"))
-	discriminatorTrain.Fwd(2*batchSize, inputDiscriminatorTrain)
+	discriminatorTrain.Fwd(inputDiscriminatorTrain)
 
 	// Define GAN on the same evaluation graph as Generator has been defined
 	definedGAN, err := gan.NewGAN(ganGraph, definedGenerator, discriminatorTrain)
 	if err != nil {
 		panic(err)
 	}
-	definedGAN.Fwd(batchSize)
+	definedGAN.Fwd()
 
 	/* Define variables for reading evaluation graphs' (both GAN and Discriminator in training mode) output */
 	// GAN Generator output
