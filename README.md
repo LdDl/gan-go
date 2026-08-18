@@ -109,7 +109,12 @@ Plotting library - [gonum](https://github.com/gonum/plot#gonum-plot)
 
 
 ## Code explanation
-@TODO
+Detailed documentation lives in the [docs](docs/README.md) folder:
+* [Package layout, core abstractions, how to add a new layer, testing approach](docs/README.md)
+* [GAN composition and the two-graph weight sharing scheme](docs/gan.md)
+* [Loss functions](docs/losses.md)
+* [Gorgonia pitfalls discovered during development](docs/pitfalls.md)
+* Per-layer documents with math and references, e.g. [LSTM](docs/layers/lstm.md), see the full map in [docs/README.md](docs/README.md#map)
 
 ## Support and contributing
 If you have troubles or questions please [open an issue](https://github.com/LdDl/gan-go/issues/new).
