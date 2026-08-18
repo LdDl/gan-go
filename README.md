@@ -12,6 +12,7 @@ Generating f(x) = x^2             |  Generating f(x) = sin(x)
 - [Why](#why)
 - [Instruments](#instruments)
 - [Usage](#usage)
+- [ToDo](#todo)
 - [Code explanation](#code-explanation)
 - [Support and contributing](#support-and-contributing)
 
@@ -107,6 +108,11 @@ Plotting library - [gonum](https://github.com/gonum/plot#gonum-plot)
 
     ![Generated data on last epoch](cmd/examples/parabola/output/gen_reference_func_final.png)
 
+
+## ToDo
+Current stage of TODO list for future releases:
+- [ ] Explanatory numerical examples **WIP**
+- [ ] Explanatory animations via [manim](https://github.com/3b1b/manim) **WIP**
 
 ## Code explanation
 Detailed documentation lives in the [docs](docs/README.md) folder:

@@ -1,3 +1,13 @@
 .vs
 .vs_code
 cmd/examples/overall
+
+# Python
+__pycache__/
+*.py[cod]
+venv/
+.venv/
+
+# Manim animations are not committed yet
+media/
+docs/animations/
