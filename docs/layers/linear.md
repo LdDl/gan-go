@@ -39,6 +39,10 @@ layer := &gan.LinearLayer{
 
 Plain matrix multiplication handles a 2D input of any batch size at once. For inputs of higher dimensions `BatchedMatMul` is applied. The bias is added with broadcasting along the batch dimension when $B > 1$ (the shared `addBias` helper in [layer.go](../../layer.go)).
 
+## See also
+
+- [Numerical example](../numeric/linear.md): forward and all three gradients expanded element by element on concrete numbers.
+
 ## References
 
 ```bibtex

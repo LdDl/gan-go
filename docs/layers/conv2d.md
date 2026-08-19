@@ -48,6 +48,10 @@ layer := &gan.Conv2DLayer{
 
 The computation is delegated to `gorgonia.Conv2d`. Kernel sizes are stored as separate fields, padding/stride/dilation as two-element slices in (height, width) order. See [cmd/examples/train_cnn](../../cmd/examples/train_cnn/main.go) for a complete classifier built with this layer.
 
+## See also
+
+- [Numerical example](../numeric/conv2d.md): the formulas above applied step by step to an RGB 13x9 image with a 3x5 kernel, padding and stride 2.
+
 ## References
 
 ```bibtex
