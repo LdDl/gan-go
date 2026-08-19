@@ -330,12 +330,15 @@ func patch(padded [][]float64, i, j, kh, kw, sh, sw int) [][]float64 {
 
 // taggedTex A LaTeX fragment with its equation number and an optional name
 type taggedTex struct {
-	Name   string
+	Name string
+	Tex  string
+	Tag  int
+}
+
+// filterBlock One filter of the convolution: a heading and one equation per channel slice
+type filterBlock struct {
 	Index  int
-	Tex    string
-	Parts  string
-	Slices string
-	Tag    int
+	Slices []taggedTex
 }
 
 // positionView One fully expanded window position of the forward pass
@@ -361,7 +364,7 @@ type conv2dView struct {
 	PadH, PadW, StrideH, StrideW int
 	PaddedH, PaddedW, OutH, OutW int
 	InputChannels                []taggedTex
-	FilterBlocks                 []taggedTex
+	FilterBlocks                 []filterBlock
 	PaddedR                      string
 	PaddedTag                    int
 	OutSizeTag                   int
@@ -416,12 +419,16 @@ func conv2dMarkdown(f conv2dFixture) (string, error) {
 		eq++
 	}
 	for o := 0; o < f.Filters; o++ {
-		parts := make([]string, f.Channels)
+		block := filterBlock{Index: o}
 		for c := 0; c < f.Channels; c++ {
-			parts[c] = fmt.Sprintf("k^{(%d,%s)} = %s", o, channelNames[c], texMatrix(f.Kernels[o][c]))
+			block.Slices = append(block.Slices, taggedTex{
+				Name: fmt.Sprintf("%d,%s", o, channelNames[c]),
+				Tex:  texMatrix(f.Kernels[o][c]),
+				Tag:  eq,
+			})
+			eq++
 		}
-		view.FilterBlocks = append(view.FilterBlocks, taggedTex{Index: o, Slices: strings.Join(parts, " \\qquad "), Tag: eq})
-		eq++
+		view.FilterBlocks = append(view.FilterBlocks, block)
 	}
 	view.PaddedTag = eq
 	eq++
@@ -505,20 +512,25 @@ func conv2dMarkdown(f conv2dFixture) (string, error) {
 	eq++
 
 	for o := 0; o < f.Filters; o++ {
-		parts := make([]string, f.Channels)
 		for c := 0; c < f.Channels; c++ {
-			parts[c] = fmt.Sprintf("\\frac{\\partial L}{\\partial k^{(%d,%s)}} = %s", o, channelNames[c], texMatrix(f.GradW[o][c]))
+			view.GradWBlocks = append(view.GradWBlocks, taggedTex{
+				Name: fmt.Sprintf("%d,%s", o, channelNames[c]),
+				Tex:  texMatrix(f.GradW[o][c]),
+				Tag:  eq,
+			})
+			eq++
 		}
-		view.GradWBlocks = append(view.GradWBlocks, taggedTex{Parts: strings.Join(parts, " \\qquad "), Tag: eq})
-		eq++
 	}
 
 	view.PixRow, view.PixCol = 1, 3
 	view.PixPadRow = view.PixRow + f.Padding[0]
 	view.PixPadCol = view.PixCol + f.Padding[1]
-	pixTerms := []string{}
+	// The expansion is grouped by filter: every line collects the windows of one filter
+	// covering the pixel, otherwise the sum would not fit the page width
 	pixSum := 0.0
+	var pix strings.Builder
 	for o := 0; o < f.Filters; o++ {
+		terms := []string{}
 		for i := 0; i < outH; i++ {
 			for j := 0; j < outW; j++ {
 				m := view.PixPadRow - i*f.Stride[0]
@@ -527,13 +539,24 @@ func conv2dMarkdown(f conv2dFixture) (string, error) {
 					prod := f.GradOutput[o][i][j] * f.Kernels[o][0][m][n]
 					pixSum += prod
 					if f.GradOutput[o][i][j] != 0 && f.Kernels[o][0][m][n] != 0 {
-						pixTerms = append(pixTerms, fmt.Sprintf("\\underbrace{%s \\cdot %s}_{\\delta^{(%d)}_{%d%d} k^{(%d,R)}_{%d%d}}", wrapNeg(f.GradOutput[o][i][j]), wrapNeg(f.Kernels[o][0][m][n]), o, i, j, o, m, n))
+						terms = append(terms, fmt.Sprintf("\\underbrace{%s \\cdot %s}_{\\delta^{(%d)}_{%d%d} k^{(%d,R)}_{%d%d}}", wrapNeg(f.GradOutput[o][i][j]), wrapNeg(f.Kernels[o][0][m][n]), o, i, j, o, m, n))
 					}
 				}
 			}
 		}
+		if len(terms) == 0 {
+			terms = append(terms, "0")
+		}
+		if o == 0 {
+			pix.WriteString("&\\phantom{+} ")
+		} else {
+			pix.WriteString("&+ ")
+		}
+		pix.WriteString(strings.Join(terms, " + "))
+		pix.WriteString(" \\\\\n")
 	}
-	view.PixBody = strings.Join(pixTerms, " + ")
+	fmt.Fprintf(&pix, "&= %s", fmtNum(pixSum))
+	view.PixBody = pix.String()
 	view.PixResult = fmtNum(pixSum)
 	view.PixTag = eq
 	eq++

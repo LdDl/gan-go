@@ -10,9 +10,9 @@ Input in NCHW of shape $[1, {{.Channels}}, {{.Height}}, {{.Width}}]$ (one RGB im
 
 {{end}}{{range .FilterBlocks}}Filter {{.Index}} (one ${{$.KernelH}} \times {{$.KernelW}}$ slice per input channel):
 
-$${{.Slices}} \tag{ {{- .Tag -}} }$$
+{{range .Slices}}$$k^{({{.Name}})} = {{.Tex}} \tag{ {{- .Tag -}} }$$
 
-{{end}}## Padding
+{{end}}{{end}}## Padding
 
 Padding of $({{.PadH}}, {{.PadW}})$ adds a ring of zeros around every channel, turning ${{.Height}} \times {{.Width}}$ into ${{.PaddedH}} \times {{.PaddedW}}$. All windows below slide over these padded matrices. Channel R after padding:
 
@@ -72,15 +72,17 @@ $$\begin{aligned}
 
 Every product pairs a $\delta$ element with the padded input value under the kernel position $(0,0)$ of the corresponding window. The remaining elements follow the same pattern:
 
-{{range .GradWBlocks}}$${{.Parts}} \tag{ {{- .Tag -}} }$$
+{{range .GradWBlocks}}$$\frac{\partial L}{\partial k^{({{.Name}})}} = {{.Tex}} \tag{ {{- .Tag -}} }$$
 
 {{end}}### Input gradients
 
 Every output element $\delta^{(o)}_{ij}$ scatters the kernel slice $k^{(o,c)}$ (multiplied by $\delta^{(o)}_{ij}$) back onto the padded canvas at the window position, contributions accumulate, the padding ring is cropped afterwards. Since the kernel is larger than the stride, neighbouring windows overlap: with kernel width {{.KernelW}} and stride {{.StrideW}} an interior pixel is covered by up to 3 windows horizontally and 2 vertically, from both filters. For the pixel at row {{.PixRow}}, column {{.PixCol}} of channel R (position row {{.PixPadRow}}, column {{.PixPadCol}} of the padded canvas):
 
-$$\frac{\partial L}{\partial x^{(R)}_{ {{- .PixRow}}{{.PixCol -}} }} = {{.PixBody}} = {{.PixResult}} \tag{ {{- .PixTag -}} }$$
+$$\begin{aligned}
+\frac{\partial L}{\partial x^{(R)}_{ {{- .PixRow}}{{.PixCol -}} }} = {{.PixBody}}
+\end{aligned} \tag{ {{- .PixTag -}} }$$
 
-(zero products are omitted; the subscripts under the braces name the contributing window and the kernel element). Full input gradients after accumulating every window of both filters and cropping the padding:
+(the first line collects the windows of filter 0, the second one of filter 1; zero products are omitted; the subscripts under the braces name the contributing window and the kernel element). Full input gradients after accumulating every window of both filters and cropping the padding:
 
 {{range .GradXBlocks}}$$\frac{\partial L}{\partial x^{({{.Name}})}} = {{.Tex}} \tag{ {{- .Tag -}} }$$
 
