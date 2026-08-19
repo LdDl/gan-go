@@ -4,7 +4,6 @@ import (
 	_ "embed"
 	"fmt"
 	"math"
-	"os"
 	"strings"
 	"text/template"
 
@@ -135,7 +134,11 @@ func generateSolvers() error {
 	if err := writeJSON("solvers", fixture); err != nil {
 		return err
 	}
-	return spliceSolversSection(fixture)
+	content, err := solversNumericSection(fixture)
+	if err != nil {
+		return err
+	}
+	return writeMarkdown("solvers", content)
 }
 
 // verifySolver drives the actual Gorgonia solver with the fixture gradients and compares every step
@@ -154,35 +157,6 @@ func verifySolver(name string, solver gorgonia.Solver, theta0 []float64, grads, 
 		}
 	}
 	return nil
-}
-
-// spliceSolversSection injects the generated numeric section into docs/solvers.md between markers
-func spliceSolversSection(f solversFixture) error {
-	const path = "docs/solvers.md"
-	const begin = "<!-- numeric:begin -->"
-	const end = "<!-- numeric:end -->"
-	src, err := os.ReadFile(path)
-	if err != nil {
-		return err
-	}
-	content := string(src)
-	numeric, err := solversNumericSection(f)
-	if err != nil {
-		return err
-	}
-	section := begin + "\n" + numeric + end
-	if strings.Contains(content, begin) && strings.Contains(content, end) {
-		head := content[:strings.Index(content, begin)]
-		tail := content[strings.Index(content, end)+len(end):]
-		content = head + section + tail
-	} else {
-		refIdx := strings.Index(content, "## References")
-		if refIdx < 0 {
-			return fmt.Errorf("no References section in %s", path)
-		}
-		content = content[:refIdx] + section + "\n\n" + content[refIdx:]
-	}
-	return os.WriteFile(path, []byte(content), 0644)
 }
 
 func vec(v []float64) string {

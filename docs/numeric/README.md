@@ -14,3 +14,4 @@ go run ./cmd/docsgen
 | --- | --- | --- |
 | Linear | [linear.md](linear.md) | batch of two, every element of forward and of all three gradients expanded |
 | Convolutional | [conv2d.md](conv2d.md) | RGB input, non-square image 13x9, non-square kernel 3x5, padding, stride 2, window overlap in backward |
+| Solvers | [solvers.md](solvers.md) | SGD, RMSProp and Adam traced over the same gradients, accumulators of every step |

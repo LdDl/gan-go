@@ -43,52 +43,9 @@ Gorgonia defaults: $\eta = 0.001$, $\beta_1 = 0.9$, $\beta_2 = 0.999$, $\varepsi
 
 Used by the sequence examples: [train_embedding](../cmd/examples/train_embedding/main.go), [train_rnn](../cmd/examples/train_rnn/main.go), [train_lstm](../cmd/examples/train_lstm/main.go), [train_gru](../cmd/examples/train_gru/main.go).
 
-## Numerical example
+## See also
 
-One parameter vector, the same three gradients fed to all three solvers, so the trajectories are directly comparable. Generated and verified step by step against the actual Gorgonia solvers by [cmd/docsgen](../cmd/docsgen).
-
-$$\theta^{(0)} = (1,\; -2) \qquad g_1 = (2,\; -4) \qquad g_2 = (1,\; 2) \qquad g_3 = (-3,\; 1)$$
-
-Common settings: $\eta = 0.1$, $B = 1$. For RMSProp $\rho = 0.9$ is set explicitly (the value of the original lecture), for Adam $\beta_1 = 0.9$, $\beta_2 = 0.999$, both with $\varepsilon = 10^{-8}$.
-
-### Vanilla SGD steps
-
-First component of step 1: $\theta_0 = 1 - 0.1 \cdot 2 = 0.8$. Every step subtracts the plain scaled gradient:
-
-| $t$ | $g_t$ | $\theta^{(t)}$ |
-| --- | --- | --- |
-| 0 | | $(1,\; -2)$ |
-| 1 | $(2,\; -4)$ | $(0.8,\; -1.6)$ |
-| 2 | $(1,\; 2)$ | $(0.7,\; -1.8)$ |
-| 3 | $(-3,\; 1)$ | $(1,\; -1.9)$ |
-
-Note the third step: the gradient flipped sign and the parameter walks back. The step size depends only on the gradient magnitude.
-
-### RMSProp steps
-
-First component of step 1: $r = 0.9 \cdot 0 + 0.1 \cdot 2^2 = 0.4$, then $\theta_0 = 1 - 0.1 \cdot 2 / \sqrt{0.4} \approx 0.6838$:
-
-| $t$ | $g_t$ | $r_t$ | $\theta^{(t)}$ |
-| --- | --- | --- | --- |
-| 0 | | $(0,\; 0)$ | $(1,\; -2)$ |
-| 1 | $(2,\; -4)$ | $(0.4,\; 1.6)$ | $(0.6838,\; -1.684)$ |
-| 2 | $(1,\; 2)$ | $(0.46,\; 1.84)$ | $(0.5363,\; -1.831)$ |
-| 3 | $(-3,\; 1)$ | $(1.314,\; 1.756)$ | $(0.798,\; -1.907)$ |
-
-The division by $\sqrt{r_t}$ normalizes the step: components with large gradients (the second one) move no faster than components with small ones.
-
-### Adam steps
-
-First component of step 1: $m = 0.1 \cdot 2 = 0.2$, $v = 0.001 \cdot 4 = 0.004$, bias corrections $\hat{m} = 0.2/0.1 = 2$, $\hat{v} = 0.004/0.001 = 4$, so $\theta_0 = 1 - 0.1 \cdot 2/\sqrt{4} = 0.9$. The corrections exactly undo the zero initialization at $t = 1$:
-
-| $t$ | $g_t$ | $m_t$ | $v_t$ | $\theta^{(t)}$ |
-| --- | --- | --- | --- | --- |
-| 0 | | $(0,\; 0)$ | $(0,\; 0)$ | $(1,\; -2)$ |
-| 1 | $(2,\; -4)$ | $(0.2,\; -0.4)$ | $(0.004,\; 0.016)$ | $(0.9,\; -1.9)$ |
-| 2 | $(1,\; 2)$ | $(0.28,\; -0.16)$ | $(0.004996,\; 0.01998)$ | $(0.8068,\; -1.873)$ |
-| 3 | $(-3,\; 1)$ | $(-0.048,\; -0.044)$ | $(0.01399,\; 0.02096)$ | $(0.815,\; -1.867)$ |
-
-Adam steps stay close to $\eta$ in magnitude regardless of the raw gradient scale, and the momentum $m_t$ smooths the sign flip of $g_3$: compare the third step with the vanilla one.
+- [Numerical example](numeric/solvers.md): the three solvers traced step by step over the same gradients, with the accumulators of every step.
 
 ## References
 

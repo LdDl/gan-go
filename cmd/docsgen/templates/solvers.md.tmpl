@@ -1,12 +1,12 @@
-## Numerical example
+# Solvers: numerical example
 
-One parameter vector, the same three gradients fed to all three solvers, so the trajectories are directly comparable. Generated and verified step by step against the actual Gorgonia solvers by [cmd/docsgen](../cmd/docsgen).
+Step-by-step traces of the solvers described in [solvers.md](../solvers.md). One parameter vector, the same three gradients fed to all three solvers, so the trajectories are directly comparable. The numbers below are generated and verified step by step against the actual Gorgonia solvers by [cmd/docsgen](../../cmd/docsgen).
 
 $$\theta^{(0)} = {{.Theta0}} \qquad g_1 = {{.G1}} \qquad g_2 = {{.G2}} \qquad g_3 = {{.G3}}$$
 
 Common settings: $\eta = {{.Eta}}$, $B = 1$. For RMSProp $\rho = {{.Rho}}$ is set explicitly (the value of the original lecture), for Adam $\beta_1 = {{.Beta1}}$, $\beta_2 = {{.Beta2}}$, both with $\varepsilon = 10^{-8}$.
 
-### Vanilla SGD steps
+## Vanilla SGD steps
 
 First component of step 1: $\theta_0 = {{.VanillaFirst}}$. Every step subtracts the plain scaled gradient:
 
@@ -17,7 +17,7 @@ First component of step 1: $\theta_0 = {{.VanillaFirst}}$. Every step subtracts 
 {{end}}
 Note the third step: the gradient flipped sign and the parameter walks back. The step size depends only on the gradient magnitude.
 
-### RMSProp steps
+## RMSProp steps
 
 First component of step 1: $r = {{.RmsR1}}$, then $\theta_0 = {{.RmsTheta1}}$:
 
@@ -28,7 +28,7 @@ First component of step 1: $r = {{.RmsR1}}$, then $\theta_0 = {{.RmsTheta1}}$:
 {{end}}
 The division by $\sqrt{r_t}$ normalizes the step: components with large gradients (the second one) move no faster than components with small ones.
 
-### Adam steps
+## Adam steps
 
 First component of step 1: $m = {{.AdamM1}}$, $v = {{.AdamV1}}$, bias corrections $\hat{m} = {{.AdamMhat}}$, $\hat{v} = {{.AdamVhat}}$, so $\theta_0 = {{.AdamTheta1}}$. The corrections exactly undo the zero initialization at $t = 1$:
 
