@@ -1,0 +1,87 @@
+# Convolutional layer: numerical example
+
+Step-by-step application of the formulas from [layers/conv2d.md](../layers/conv2d.md) with every complication present at once: an RGB image (three channels), a non-square image, a non-square kernel, padding and a stride larger than one. All values are small integers, so every step can be verified by hand. The numbers below are generated and checked against the actual layer implementation and Gorgonia gradients by [cmd/docsgen](../../cmd/docsgen).
+
+## Given
+
+Input in NCHW of shape $[1, {{.Channels}}, {{.Height}}, {{.Width}}]$ (one RGB image of height {{.Height}} and width {{.Width}}), kernel ${{.KernelH}} \times {{.KernelW}}$, padding $({{.PadH}}, {{.PadW}})$, stride $({{.StrideH}}, {{.StrideW}})$, dilation $(1, 1)$, {{.Filters}} filters, no bias (as in the examples of this repository).
+
+{{range .InputChannels}}$$x^{({{.Name}})} = {{.Tex}} \tag{ {{- .Tag -}} }$$
+
+{{end}}{{range .FilterBlocks}}Filter {{.Index}} (one ${{$.KernelH}} \times {{$.KernelW}}$ slice per input channel):
+
+$${{.Slices}} \tag{ {{- .Tag -}} }$$
+
+{{end}}## Padding
+
+Padding of $({{.PadH}}, {{.PadW}})$ adds a ring of zeros around every channel, turning ${{.Height}} \times {{.Width}}$ into ${{.PaddedH}} \times {{.PaddedW}}$. All windows below slide over these padded matrices. Channel R after padding:
+
+$$\tilde{x}^{(R)} = {{.PaddedR}} \tag{ {{- .PaddedTag -}} }$$
+
+Channels G and B are padded the same way.
+
+## Output size
+
+$$H' = \left\lfloor \frac{ {{- .Height}} + 2 \cdot {{.PadH}} - {{.KernelH -}} }{ {{- .StrideH -}} } \right\rfloor + 1 = {{.OutH}} \qquad W' = \left\lfloor \frac{ {{- .Width}} + 2 \cdot {{.PadW}} - {{.KernelW -}} }{ {{- .StrideW -}} } \right\rfloor + 1 = {{.OutW}} \tag{ {{- .OutSizeTag -}} }$$
+
+The non-square kernel makes the two directions differ on purpose: the output is ${{.OutH}} \times {{.OutW}}$ per filter.
+
+## Forward
+
+An output element of filter $o$ at position $(i, j)$ is the sum over all three channels of elementwise products between the ${{.KernelH}} \times {{.KernelW}}$ window of $\tilde{x}$ starting at row $i \cdot s_h$, column $j \cdot s_w$ and the kernel slice of the channel.
+
+{{range .Positions}}### Position $({{.I}}, {{.J}})$ of filter 0
+
+The window starts at row ${{.I}} \cdot {{$.StrideH}} = {{.StartRow}}$ and column ${{.J}} \cdot {{$.StrideW}} = {{.StartCol}}$ of the padded input:
+
+{{range .Channels}}$$P^{({{.Name}})} = {{.PatchTex}}$$
+
+$$\langle P^{({{.Name}})}, k^{(0,{{.Name}})} \rangle = {{.Body}} = {{.Result}}$$
+
+{{end}}(zero products are omitted). Summing the three channels: $y^{(0)}_{ {{- .I}}{{.J -}} } = {{.Total}}$
+
+{{end}}### Per-channel partial responses
+
+The channel sum above can be split into per-channel response maps: apply every kernel slice to its channel alone, over all positions. For filter 0:
+
+{{range .PartialMaps}}$$y^{(0,{{.Name}})} = {{.Tex}} \tag{ {{- .Tag -}} }$$
+
+{{end}}The output map of the filter is nothing but the elementwise SUM of the three partial maps:
+
+$$y^{(0)} = y^{(0,R)} + y^{(0,G)} + y^{(0,B)} = {{.Y0}} \tag{ {{- .Y0Tag -}} }$$
+
+### All positions
+
+Repeating the same computation for the second filter:
+
+$$y^{(1)} = {{.Y1}} \tag{ {{- .Y1Tag -}} }$$
+
+## Backward
+
+Let the gradient coming from the next layer be (one matrix per filter):
+
+$$\delta^{(0)} = {{.Delta0}} \qquad \delta^{(1)} = {{.Delta1}} \tag{ {{- .DeltaTag -}} }$$
+
+### Kernel gradients
+
+$\frac{\partial L}{\partial k^{(o,c)}_{mn}} = \sum_{i,j} \delta^{(o)}_{ij} \cdot \tilde{x}^{(c)}_{i s_h + m,\; j s_w + n}$: the kernel gradient is a cross-correlation of the padded input with $\delta$, sampled at stride positions. Fully expanded for the top left element of filter 0, channel R, grouped by output rows (zero products are omitted):
+
+$$\begin{aligned}
+\frac{\partial L}{\partial k^{(0,R)}_{00}} = {{.DWAlignedBody}}
+\end{aligned} \tag{ {{- .DWAlignedTag -}} }$$
+
+Every product pairs a $\delta$ element with the padded input value under the kernel position $(0,0)$ of the corresponding window. The remaining elements follow the same pattern:
+
+{{range .GradWBlocks}}$${{.Parts}} \tag{ {{- .Tag -}} }$$
+
+{{end}}### Input gradients
+
+Every output element $\delta^{(o)}_{ij}$ scatters the kernel slice $k^{(o,c)}$ (multiplied by $\delta^{(o)}_{ij}$) back onto the padded canvas at the window position, contributions accumulate, the padding ring is cropped afterwards. Since the kernel is larger than the stride, neighbouring windows overlap: with kernel width {{.KernelW}} and stride {{.StrideW}} an interior pixel is covered by up to 3 windows horizontally and 2 vertically, from both filters. For the pixel at row {{.PixRow}}, column {{.PixCol}} of channel R (position row {{.PixPadRow}}, column {{.PixPadCol}} of the padded canvas):
+
+$$\frac{\partial L}{\partial x^{(R)}_{ {{- .PixRow}}{{.PixCol -}} }} = {{.PixBody}} = {{.PixResult}} \tag{ {{- .PixTag -}} }$$
+
+(zero products are omitted; the subscripts under the braces name the contributing window and the kernel element). Full input gradients after accumulating every window of both filters and cropping the padding:
+
+{{range .GradXBlocks}}$$\frac{\partial L}{\partial x^{({{.Name}})}} = {{.Tex}} \tag{ {{- .Tag -}} }$$
+
+{{end}}

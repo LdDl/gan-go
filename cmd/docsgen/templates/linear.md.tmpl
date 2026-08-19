@@ -1,0 +1,61 @@
+# Linear layer: numerical example
+
+Step-by-step application of the formulas from [layers/linear.md](../layers/linear.md). All values are small integers, so every step can be verified by hand. The numbers below are generated and checked against the actual layer implementation and Gorgonia gradients by [cmd/docsgen](../../cmd/docsgen).
+
+## Given
+
+Input $x$ of shape $[{{.Batch}}, {{.FIn}}]$ (batch of {{.Batch}}), weights $W$ of shape $[{{.FOut}}, {{.FIn}}]$, bias $b$:
+
+$$x = {{.X}} \tag{1}$$
+
+$$W = {{.W}} \tag{2}$$
+
+$$b = {{.B}} \tag{3}$$
+
+Every ROW of $x$ is an independent sample of the batch: row 0 is the sample $({{.Row0}})$, row 1 is the sample $({{.Row1}})$. The row index $i$ is the sample index everywhere below.
+
+## Forward
+
+Every output element is a dot product of an input row with a weight row plus the bias: $y_{ij} = \sum_k x_{ik} W_{jk} + b_j$. Note that $y_{ij}$ touches only row $i$ of the input: samples of the batch do not interact in the forward pass, row $i$ of the output is computed from row $i$ of the input alone.
+
+{{range .ForwardSteps}}$$y_{{"{"}}{{.LHS}}{{"}"}} = {{.Body}} = {{.Result}}$$
+
+{{end}}$$y = {{.Y}} \tag{4}$$
+
+## Backward
+
+Let the gradient coming from the next layer be
+
+$$\delta = \frac{\partial L}{\partial y} = {{.Delta}} \tag{5}$$
+
+The error is laid out per sample exactly like the output: row $i$ of $\delta$ is the error of sample $i$, produced by the loss from row $i$ of $y$ (for the losses of this library $\delta_{ij}$ depends only on $y_{ij}$ and its target, samples never mix inside the loss).
+
+Weights gradient $\frac{\partial L}{\partial W} = \delta^{\top} x$, element wise $\frac{\partial L}{\partial W_{jk}} = \sum_i \delta_{ij} x_{ik}$. This is the one place where the batch mixes: the sum runs over the sample index $i$, so every expansion below has one term per sample (the first term comes from sample 0, the second from sample 1). The same holds for the bias gradient. The input gradient, like the forward pass, stays per-sample.
+
+{{range .GradWSteps}}$$\frac{\partial L}{\partial W_{{"{"}}{{.LHS}}{{"}"}}} = {{.Body}} = {{.Result}}$$
+
+{{end}}$$\frac{\partial L}{\partial W} = {{.GradW}} \tag{6}$$
+
+Bias gradient is the sum of $\delta$ over the batch dimension:
+
+{{range .GradBSteps}}$$\frac{\partial L}{\partial b_{{"{"}}{{.LHS}}{{"}"}}} = {{.Body}} = {{.Result}}$$
+
+{{end}}$$\frac{\partial L}{\partial b} = {{.GradB}} \tag{7}$$
+
+Input gradient $\frac{\partial L}{\partial x} = \delta W$, element wise $\frac{\partial L}{\partial x_{ik}} = \sum_j \delta_{ij} W_{jk}$:
+
+{{range .GradXSteps}}$$\frac{\partial L}{\partial x_{{"{"}}{{.LHS}}{{"}"}}} = {{.Body}} = {{.Result}}$$
+
+{{end}}$$\frac{\partial L}{\partial x} = {{.GradX}} \tag{8}$$
+
+## Weights update
+
+The gradients are what the solver consumes. A vanilla gradient descent step with learning rate $\eta = {{.LR}}$ moves every parameter against its gradient: $W \leftarrow W - \eta \frac{\partial L}{\partial W}$, same for $b$. A couple of elements expanded:
+
+$$W'_{00} = {{.Upd00}} \qquad W'_{12} = {{.Upd12}}$$
+
+Updated parameters after the step:
+
+$$W' = {{.NewW}} \qquad b' = {{.NewB}} \tag{9}$$
+
+These values are verified against a `VanillaSolver` step of Gorgonia. The examples of this repository use RMSProp and Adam (see [solvers.md](../solvers.md) for their formulas), which scale the same gradients adaptively before applying, but consume exactly the gradients derived above. The input gradient $\frac{\partial L}{\partial x}$ is not applied to anything here: it becomes the $\delta$ of the previous layer during backpropagation.
