@@ -7,7 +7,9 @@ This directory explains how the library is built. Every document is self-contain
 | Topic | Document |
 | --- | --- |
 | GAN composition and the two-graph scheme | [gan.md](gan.md) |
+| Numerical examples (step-by-step forward and backward) | [numeric](numeric) |
 | Loss functions | [losses.md](losses.md) |
+| Solvers: SGD, RMSProp, Adam | [solvers.md](solvers.md) |
 | Gorgonia pitfalls learned the hard way | [pitfalls.md](pitfalls.md) |
 | Conventions shared by recurrent layers | [layers/recurrent.md](layers/recurrent.md) |
 | Linear | [layers/linear.md](layers/linear.md) |
